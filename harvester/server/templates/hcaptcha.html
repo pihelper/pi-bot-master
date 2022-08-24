@@ -1,0 +1,35 @@
+<html lang='en'>
+
+<head>
+    <title>Harvester: {{ domain }}</title>
+    <meta charset='utf-8'>
+    <meta name='viewport' content='width=device-width, initial-scale=1, shrink-to-fit=no'>
+    <link rel='stylesheet' href='https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css'
+        integrity='sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z' crossorigin='anonymous'>
+    <link rel='stylesheet' href='/style.css'>
+    <script type='text/javascript' src='https://hcaptcha.com/1/api.js' async defer></script>
+    {{ script.ga.js }}
+</head>
+
+<body>
+    <section>
+        <h3>hCaptcha Harvester</h3>
+        <form method='POST'>
+            <div class='h-captcha' data-sitekey='{{ sitekey }}' data-callback='submit'></div>
+            <a class='btn btn-primary' href='{{ server }}/{{ domain }}/tokens' target='_blank'>Usable Tokens</a>
+            <button id='submit' type='submit' class='btn btn-primary'>Submit</button>
+        </form>
+    </section>
+    <footer>
+        <div class='love'>
+            Made with ❤️ &nbsp; by <a href='https://github.com/NoahCardoza/CaptchaHarvester'
+                target='_blank'>@NoahCardoza</a>
+        </div>
+        <iframe src='https://ghbtns.com/github-btn.html?user=NoahCardoza&repo=CaptchaHarvester&type=star&count=true'
+            frameborder='0' scrolling='0' width='90' height='20' title='GitHub'></iframe>
+
+    </footer>
+    <script>function submit() { document.getElementById('submit').click(); }</script>
+</body>
+
+</html>
