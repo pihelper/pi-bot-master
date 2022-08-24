@@ -1,5 +1,6 @@
 import random
 import time
+from os.path import exists
 
 import requests, re
 from Crypto.PublicKey import RSA
@@ -27,16 +28,23 @@ class Shop:
         self.main_site = self.info
         self.status_signal.emit({"msg": "Starting", "status": "normal"})
 
-        if 'pimoroni' in self.main_site:
-            self.browser_login()
+        needs_chrome = False
 
-        req = self.atc()
-        self.main_url = req.url
-        self.auth_token, self.shipping_rate = self.get_tokens(req)
-        self.submit_shipping()
-        self.submit_rates()
-        self.price, self.gateway = self.calc_taxes()
-        self.submit_payment()
+        if 'pimoroni' in self.main_site:
+            if exists('chromedriver.exe'):
+                self.browser_login()
+            else:
+                self.status_signal.emit({"msg": "No ChromeDriver found!", "status": "error"})
+                needs_chrome = True
+
+        if not needs_chrome:
+            req = self.atc()
+            self.main_url = req.url
+            self.auth_token, self.shipping_rate = self.get_tokens(req)
+            self.submit_shipping()
+            self.submit_rates()
+            self.price, self.gateway = self.calc_taxes()
+            self.submit_payment()
 
     def get_checkout_token(self, html):
         ind = html.index("authenticity_token")

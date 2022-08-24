@@ -1,22 +1,9 @@
-import json
 import logging
 import random
 import time
-from threading import Thread
-
-import requests, re
-from Crypto.PublicKey import RSA
-from bs4 import BeautifulSoup
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.wait import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-
-from harvester import Harvester
-from pages import homepage
+import requests
 from utils import return_data, send_notif, format_proxy
-from webhook import good_web, failed_spark_web, good_spark_web, cart_web
+from webhook import failed_spark_web, good_spark_web, cart_web
 
 
 class Sparkfun:
@@ -66,16 +53,16 @@ class Sparkfun:
         return spli
 
     def get_braintree(self, html):
-        balls = '"braintree-device-data" value="'
-        ind = html.index(balls)
-        to_parse = html[ind + len(balls)::]
+        ind = '"braintree-device-data" value="'
+        ind = html.index(ind)
+        to_parse = html[ind + len(ind)::]
         hey = to_parse.split('}')[0] + "}"
         return hey.replace('&quot;', '"')
 
     def get_price(self, html):
-        balls = 'name="total_price" id="amount"'
-        ind = html.index(balls)
-        to_parse = html[ind + len(balls)::]
+        ind = 'name="total_price" id="amount"'
+        ind = html.index(ind)
+        to_parse = html[ind + len(ind)::]
         return to_parse.split('"')[1]
 
     def get_sparkrev(self, html):

@@ -38,26 +38,6 @@ def get_pid(url):
     soup = BeautifulSoup(html, 'html.parser')
     return soup.find_all(attrs={"name": "product_id"})[0]['value']
 
-def get_captcha(url):
-    sitekey = '6LcjX0sbAAAAACp92-MNpx66FT4pbIWh-FTDmkkz'
-    api_key = 'd3feb431a12c805e759a4b111ebadd24'
-    create_task = '{"clientKey": "' + api_key + '", "task": {"type": "NoCaptchaTaskProxyless", "websiteURL": "' + url + '", "websiteKey": "' + sitekey + '"}}'
-    make_task = {'clientKey': api_key, 'task': {'type': 'NoCaptchaTaskProxyless', 'websiteURL': url, 'websiteKey' : sitekey}}
-    print('Requesting captcha')
-    r = requests.post("https://api.capmonster.cloud/createTask", json=make_task).json()
-    taskId = r['taskId']
-    if taskId != 0:
-        print('Waiting for captcha')
-        get_result = '{"clientKey":"' + api_key + '", "taskId":' + str(taskId) + '}'
-        i = 0
-        while i < 240:
-            r = requests.post('https://api.capmonster.cloud/getTaskResult', data=get_result).json()
-            if r["status"] != 'ready':
-                time.sleep(0.5)
-                i += 1
-            else:
-                return r['solution']['gRecaptchaResponse']
-
 class PiShop:
     def __init__(self, task_id, status_signal, product_signal, product, info, size, profile, proxy, monitor_delay, error_delay,captcha_type, qty):
         self.task_id, self.status_signal, self.product_signal, self.product, self.info, self.size, self.profile, self.monitor_delay, self.error_delay,self.captcha_type, self.qty = task_id, status_signal, product_signal, product, info, size, profile,monitor_delay, error_delay, captcha_type, qty

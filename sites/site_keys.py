@@ -3,8 +3,7 @@ chigaco_items = {'Raspberry Pi Zero 2 W Starter Kit': 'collections/raspberry-pi/
                  'Raspberry Pi 4 Model B - 2GB RAM': 'collections/raspberry-pi/products.json?limit=250&page=2|raspberry-pi-4-model-b-2gb|default',
                  'Raspberry Pi 4 Model B - 4GB RAM': 'collections/raspberry-pi/products.json?limit=250&page=2|raspberry-pi-4-model-b-4gb|default',
                  'Raspberry Pi 4 Model B - 8GB RAM': 'collections/raspberry-pi/products.json?limit=250&page=2|raspberry-pi-4-model-b-8gb|default',
-                 'Raspberry Pi Zero 2 W': 'collections/raspberry-pi/products.json?limit=250&page=2|raspberry-pi-zero-2|default',
-                 'TEST': 'products.json?limit=250|usb-flat-cable-a-microb-orange|default'}
+                 'Raspberry Pi Zero 2 W': 'collections/raspberry-pi/products.json?limit=250&page=2|raspberry-pi-zero-2|default'}
 
 vilros_items = {'Raspberry Pi 4 Model B -  4GB RAM': 'collections/raspberry-pi-boards/products.json?limit=250|raspberry-pi-4-4gb-ram|default',
 'Raspberry Pi 4 Model B -  2GB RAM': 'collections/raspberry-pi-boards/products.json?limit=250|raspberry-pi-4-2gb-ram|default',
@@ -50,7 +49,7 @@ cool_items = {'Raspberry Pi 4 / 1GB': 'collections/raspberry-pi-boards/products.
 'Raspberry Pi 4 / 2GB': 'collections/raspberry-pi-boards/products.json?limit=250|raspberry-pi-4|2GB',
 'Raspberry Pi 4 / 4GB': 'collections/raspberry-pi-boards/products.json?limit=250|raspberry-pi-4|4GB',
 'Raspberry Pi 4 / 8GB': 'collections/raspberry-pi-boards/products.json?limit=250|raspberry-pi-4|8GB',
-'Raspberry Pi Zero 2 W / Default Title': 'collections/raspberry-pi-boards/products.json?limit=250|raspberry-pi-zero-2-w|default',
+'Raspberry Pi Zero 2 W': 'collections/raspberry-pi-boards/products.json?limit=250|raspberry-pi-zero-2-w|default',
 'Raspberry Pi 3 Model A+': 'collections/raspberry-pi-boards/products.json?limit=250|raspberry-pi-3-model-a|default',
 'Raspberry Pi 3 Model B+': 'collections/raspberry-pi-boards/products.json?limit=250|raspberry-pi-3-model-b-1|default'
 }
@@ -101,8 +100,7 @@ pihut_items = {'Raspberry Pi 3 Model B': 'collections/raspberry-pi/products.json
                'Raspberry Pi CM4 / 32GB / 4GB / No Wireless': 'collections/raspberry-pi/products.json?limit=250|raspberry-pi-compute-module-4|32GB / 4GB / No Wireless',
                'Raspberry Pi CM4 / 32GB / 8GB / Wireless': 'collections/raspberry-pi/products.json?limit=250|raspberry-pi-compute-module-4|32GB / 8GB / Wireless',
                'Raspberry Pi CM4 / 32GB / 8GB / No Wireless': 'collections/raspberry-pi/products.json?limit=250|raspberry-pi-compute-module-4|32GB / 8GB / No Wireless',
-               'Google Coral USB Accelerator': 'collections/google/products.json?limit=250|coral-usb-accelerator|default',
-               'Test Item': 'products.json|mk8-brass-3d-printer-nozzles-6-pack|0.2'
+               'Google Coral USB Accelerator': 'collections/google/products.json?limit=250|coral-usb-accelerator|default'
 }
 
 pimoroni_items = {'Raspberry Pi 4 Model B / 1GB RAM': 'collections/single-board-computers/products.json?limit=250|raspberry-pi-4|1GB RAM',

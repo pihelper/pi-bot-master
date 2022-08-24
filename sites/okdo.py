@@ -3,13 +3,10 @@ import random
 import time
 import urllib.parse
 import uuid
-
 import requests
-
 import utils
 from utils import send_notif, return_data
 from webhook import good_spark_web, failed_spark_web, cart_web
-
 
 def check_stock(json):
     availability = json["@graph"][0]["offers"][0]['availability']
