@@ -1,16 +1,12 @@
-from threading import Thread
-
 from PyQt5 import QtCore, QtGui, QtWidgets
-
-from harvester import Harvester
 from sites.okdo import Okdo
 from sites.pishop import PiShop
 from sites.shop import Shop
 from pages.createdialog import CreateDialog
 from sites.sparkfun import Sparkfun
-from utils import get_profile, get_proxy, PiLogger, return_data, write_data, get_proxy_list
+from utils import get_profile, PiLogger, return_data, write_data, get_proxy_list
 import urllib.request,sys,platform
-import settings
+
 def no_abort(a, b, c):
     sys.__excepthook__(a, b, c)
 sys.excepthook = no_abort

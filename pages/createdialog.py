@@ -1,8 +1,7 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 import sys,platform
 
-from sites.site_keys import chigaco_items, vilros_items, pihut_items, sbc_items, cool_items, pimoroni_items, pi3g_items, \
-    get_item_info
+from sites.site_keys import chigaco_items, vilros_items, pihut_items, sbc_items, cool_items, pimoroni_items, pi3g_items
 
 
 def no_abort(a, b, c):

@@ -3,8 +3,6 @@ import time
 from os.path import exists
 
 import requests, re
-from Crypto.PublicKey import RSA
-from PyQt5 import QtCore
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 
