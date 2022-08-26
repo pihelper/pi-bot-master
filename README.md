@@ -8,6 +8,8 @@ Instead of switches, Pi Bot aims at helping people obtain Raspberry Pis + other 
 * Easy to use interface built on PyQt5
 * Waits for items to restock if they are out of stock
 * Lighting fast auto-checkout
+* Lightweight to handle multiple tasks
+* Captcha Harvester (credit to [NoahCardoza's Captcha Harvester](https://github.com/NoahCardoza/CaptchaHarvester))
 
 <p align="center">
   <img src="https://i.imgur.com/TwPnLnl.png" alt="Pi Bot UI" width="738">
