@@ -4,6 +4,7 @@ import traceback
 from os.path import exists
 
 import requests, re
+import urllib3
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 
@@ -17,9 +18,11 @@ class Shop:
         self.session = requests.Session()
         self.settings = return_data("./data/settings.json")
         self.proxy_list = proxy
+        self.session.verify = False
         self.product_json = self.size.split('|')[0]
         self.handle = self.size.split('|')[1]
         self.size_kw = self.size.split('|')[2]
+        urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
         if self.proxy_list != False:
             self.update_random_proxy()
@@ -38,7 +41,6 @@ class Shop:
                 needs_chrome = True
 
         if not needs_chrome:
-            self.init_req()
             req = self.atc()
             self.main_url = req.url
             self.auth_token, self.shipping_rate = self.get_tokens(req)
@@ -84,8 +86,6 @@ class Shop:
         phony = re.sub('[^A-Za-z0-9]+', '', phone).strip()
         return '(' + phony[:3] + ') ' + phony[3:6] + "-" + phony[-4:]
 
-    def init_req(self):
-        print(self.session.get('http://icanhazip.com').content)
     def browser_login(self):
         while True:
             self.status_signal.emit({"msg": "Awaiting Login", "status": "normal"})
@@ -128,7 +128,7 @@ class Shop:
                         found = False
                     elif found:
                         self.status_signal.emit({"msg": "Checking stock", "status": "checking"})
-                    products = self.session.get(self.main_site + self.product_json, headers={'Content-Type': 'application/json'})
+                    products = self.session.get(self.main_site + self.product_json)
                     if products.status_code == 200:
                         products = products.json()['products']
                         for prod in products:
