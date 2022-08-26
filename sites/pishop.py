@@ -57,7 +57,7 @@ class PiShop:
         self.title = ''
         if 'pishop.us' not in str(self.info).lower():
             self.status_signal.emit({"msg": "Invalid PiShop.us Link", "status": "error"})
-        else:
+        elif not self.invalid_captcha_key():
             self.main_site = self.info
             self.status_signal.emit({"msg": "Starting", "status": "normal"})
             self.monitor()
@@ -66,7 +66,15 @@ class PiShop:
             self.submit_shipping()
             self.submit_captcha()
             self.submit_payment_info()
-
+    def invalid_captcha_key(self):
+        if self.captcha_type == 'CapMonster' and self.settings['2captchakey'] == '':
+            self.status_signal.emit({"msg": "CapMonster key is empty!", "status": "error"})
+            return True
+        elif self.captcha_type == '2Captcha':
+            self.status_signal.emit({"msg": "2Captcha Key is empty!", "status": "error"})
+            return True
+        else:
+            return False
     def monitor(self):
         while True:
             try:
@@ -253,10 +261,14 @@ class PiShop:
         # Order needs to submit a V2 ReCAPTCHA token to /spam-protection to proceed
         # I've never had an order using this bot that didn't need to invoke spam protection but later spam protection checking will be added
         captcha = self.handle_captcha()
-        cap_data = {'token': captcha}
-        self.status_signal.emit({"msg": "Submitting captcha", "status": "normal"})
-        cap_submit = self.session.post(f'https://www.pishop.us/api/storefront/checkouts/{self.cart_id}/spam-protection', json=cap_data,
-                            headers=spam_protection)
+
+        if captcha == 'INVALID_API_KEY':
+            self.status_signal.emit({"msg": f"Invalid {self.captcha_type} Key!", "status": "error"})
+        else:
+            cap_data = {'token': captcha}
+            self.status_signal.emit({"msg": "Submitting captcha", "status": "normal"})
+            cap_submit = self.session.post(f'https://www.pishop.us/api/storefront/checkouts/{self.cart_id}/spam-protection', json=cap_data,
+                                headers=spam_protection)
 
     def submit_payment_info(self):
         payment_headers = {
