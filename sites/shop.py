@@ -175,7 +175,7 @@ class Shop:
                     if ('checkout' in req.url) and 'stock_problem' not in req.url:
                         self.status_signal.emit({"msg": "Added to Cart", "status": "carted"})
                         if self.settings['webhookcart']:
-                            cart_web(self.main_url, self.image, self.main_site, self.product, self.profile['profile_name'])
+                            cart_web(self.main_site, self.image, self.main_site, self.product, self.profile['profile_name'])
                         return req
                     elif 'checkout' in req.url and 'stock_problems' in req.url:
                         self.status_signal.emit({"msg": "Monitoring (Carted)", "status": "carted"})
@@ -216,7 +216,7 @@ class Shop:
         while True:
             try:
                 self.status_signal.emit({"msg": "Getting Shipping Rates", "status": "normal"})
-                jayson = self.session.get(f'{self.main_site}cart/shipping_rates.json?shipping_address[zip]={profile["shipping_zipcode"]}&shipping_address[country]=US&shipping_address[province]={profile["shipping_state"]}').json()
+                jayson = self.session.get(f'{self.main_site}cart/shipping_rates.json?shipping_address[zip]={str(profile["shipping_zipcode"]).replace(" ","")}&shipping_address[country]={self.get_country_code()}&shipping_address[province]={profile["shipping_state"]}').json()
                 full_rate = f'{jayson["shipping_rates"][0]["source"]}-{jayson["shipping_rates"][0]["code"]}-{jayson["shipping_rates"][0]["price"]}'
                 break
             except:
@@ -239,8 +239,7 @@ class Shop:
                      'checkout[shipping_address][address1]': profile['shipping_a1'],
                      'checkout[shipping_address][address2]': profile['shipping_a2'],
                      'checkout[shipping_address][city]': profile['shipping_city'],
-                     'checkout[shipping_address][country]': 'United States',
-                     'checkout[shipping_address][province]': profile['shipping_state'],
+                     'checkout[shipping_address][country]': profile['shipping_country'],
                      'checkout[shipping_address][zip]': profile['shipping_zipcode'],
                      'checkout[shipping_address][phone]': self.format_phone2(profile["shipping_phone"]),
                      'checkout[email]': profile['shipping_email'],
@@ -251,6 +250,8 @@ class Shop:
                      'checkout[client_details][java_enabled]': 'false',
                      'checkout[client_details][browzer_tz]': '240'
                      }
+                if profile['shipping_country'] == 'United States':
+                    x['checkout[shipping_address][province]'] = profile['shipping_state'],
                 self.status_signal.emit({"msg": "Submitting Shipping Info", "status": "normal"})
                 self.session.post(self.main_url,data=x, headers=self.request_headers(self.main_url + '?step=contact_information'))
                 return
@@ -472,6 +473,9 @@ class Shop:
                 if kw not in item_comp:
                     return False
         return True
+
+    def get_country_code(self):
+        return 'GB' if self.profile['shipping_country'] == 'United Kingdom' else 'US'
 
     def update_random_proxy(self):
         if self.proxy_list != False:

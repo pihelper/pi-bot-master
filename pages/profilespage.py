@@ -90,6 +90,7 @@ class ProfilesPage(QtWidgets.QWidget):
         self.shipping_country_box.setStyleSheet("outline: 0;border: 1px solid #60a8ce;border-width: 0 0 2px;color: rgb(234, 239, 239);")
         self.shipping_country_box.addItem("Country")
         self.shipping_country_box.addItem("United States")
+        self.shipping_country_box.addItem("United Kingdom")
         self.profiles_header = QtWidgets.QLabel(self.profilespage)
         self.profiles_header.setGeometry(QtCore.QRect(30, 10, 81, 31))
         font.setPointSize(22) if platform.system() == "Darwin" else font.setPointSize(16)
@@ -258,6 +259,11 @@ class ProfilesPage(QtWidgets.QWidget):
         self.delete_btn.setText("Delete")
         self.delete_btn.clicked.connect(self.delete_profile)
         self.set_data()
+        self.shipping_state_box.setVisible(self.shipping_country_box.currentText() == 'United States')
+        self.billing_state_box.setVisible(self.billing_country_box.currentText() == 'United States')
+        self.shipping_country_box.activated.connect(self.shipping_country_adjust)
+        self.billing_country_box.activated.connect(self.billing_country_adjust)
+
         QtCore.QMetaObject.connectSlotsByName(profilespage)
     
     def set_data(self):
@@ -288,7 +294,16 @@ class ProfilesPage(QtWidgets.QWidget):
             self.billing_city_edit.setText(self.shipping_city_edit.text())
             self.billing_zipcode_edit.setText(self.shipping_zipcode_edit.text())
             self.billing_state_box.setCurrentIndex(self.billing_state_box.findText(self.shipping_state_box.currentText()))
-   
+            self.shipping_state_box.setVisible(self.shipping_country_box.currentText() == 'United States')
+            self.billing_state_box.setVisible(self.billing_country_box.currentText() == 'United States')
+
+    def shipping_country_adjust(self):
+        self.shipping_state_box.setVisible(self.shipping_country_box.currentText() == 'United States')
+        
+    def billing_country_adjust(self):
+        self.billing_state_box.setVisible(self.billing_country_box.currentText() == 'United States')
+       
+       
     def load_profile(self):
         profile_name = self.loadprofile_box.currentText()
         p = get_profile(profile_name)
@@ -401,4 +416,4 @@ class ProfilesPage(QtWidgets.QWidget):
         self.cardyear_box.setCurrentIndex(0)
         self.cardtype_box.setCurrentIndex(0)
         self.cardcvv_edit.setText("")
-        QtWidgets.QMessageBox.information(self, "Bird Bot", "Deleted Profile")
+        QtWidgets.QMessageBox.information(self, "Pi Bot", "Deleted Profile")
