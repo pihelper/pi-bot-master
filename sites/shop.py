@@ -26,6 +26,7 @@ class Shop:
         self.image = ''
         self.main_site = self.info
         self.status_signal.emit({"msg": "Starting", "status": "normal"})
+        self.proxy_to_use = self.update_random_proxy()
 
         needs_chrome = False
 
@@ -37,6 +38,7 @@ class Shop:
                 needs_chrome = True
 
         if not needs_chrome:
+            self.init_req()
             req = self.atc()
             self.main_url = req.url
             self.auth_token, self.shipping_rate = self.get_tokens(req)
@@ -82,6 +84,8 @@ class Shop:
         phony = re.sub('[^A-Za-z0-9]+', '', phone).strip()
         return '(' + phony[:3] + ') ' + phony[3:6] + "-" + phony[-4:]
 
+    def init_req(self):
+        print(self.session.get('http://icanhazip.com').content)
     def browser_login(self):
         while True:
             self.status_signal.emit({"msg": "Awaiting Login", "status": "normal"})
@@ -151,6 +155,7 @@ class Shop:
                             time.sleep(float(self.monitor_delay))
                     elif products.status_code == 430:
                         self.status_signal.emit({"msg": f'IP Rate Limited!', "status": "error_no_log"})
+                        print(products.text)
                         self.update_random_proxy()
                         time.sleep(float(self.error_delay))
                     else:

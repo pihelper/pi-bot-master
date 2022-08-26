@@ -8,13 +8,13 @@ def no_abort(a, b, c):
     sys.__excepthook__(a, b, c)
 sys.excepthook = no_abort
 
-pi_sites = {'ThePiHut': 'https://thepihut.com/',
-                         'Vilros': 'https://vilros.com/',
-                         'Chicago Dist.': 'https://chicagodist.com/',
-                         'Pimoroni (UK)' : 'https://shop.pimoroni.com/',
-                         'SBComponents (UK)' : 'https://shop.sb-components.co.uk/',
-                         'pi3g (DE)': 'https://buyzero.de/',
-                         'Cool Components (UK)' : 'https://coolcomponents.co.uk/',
+pi_sites = {'ThePiHut': 'http://thepihut.com/',
+                         'Vilros': 'http://vilros.com/',
+                         'Chicago Dist.': 'http://chicagodist.com/',
+                         'Pimoroni (UK)' : 'http://shop.pimoroni.com/',
+                         'SBComponents (UK)' : 'http://shop.sb-components.co.uk/',
+                         'pi3g (DE)': 'http://buyzero.de/',
+                         'Cool Components (UK)' : 'http://coolcomponents.co.uk/',
                          'PiShop (US)' : 'https://www.pishop.us/',
                          'Sparkfun': 'https://www.sparkfun.com/',
                          'OKDO (US)': 'https://www.odko.com/us/'}

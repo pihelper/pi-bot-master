@@ -98,7 +98,6 @@ def format_proxy(proxy):
         ip, port, user, passw = proxy_parts[0], proxy_parts[1], proxy_parts[2], proxy_parts[3]
         return {
             "http": "http://{}:{}@{}:{}".format(user, passw, ip, port)
-            # ,"https": "https://{}:{}@{}:{}".format(user, passw, ip, port),
         }
     except IndexError:
         return {"http": "http://" + proxy}
