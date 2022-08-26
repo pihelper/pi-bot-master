@@ -1,9 +1,10 @@
-chigaco_items = {'Raspberry Pi Zero 2 W Starter Kit': 'collections/raspberry-pi/products.json?limit=250|raspberry-pi-zero-2-w-starter-kit|default',
-                 'Raspberry Pi 4 Model B - 1GB RAM': 'collections/raspberry-pi/products.json?limit=250&page=2|raspberry-pi-4-model-b-1gb|default',
-                 'Raspberry Pi 4 Model B - 2GB RAM': 'collections/raspberry-pi/products.json?limit=250&page=2|raspberry-pi-4-model-b-2gb|default',
-                 'Raspberry Pi 4 Model B - 4GB RAM': 'collections/raspberry-pi/products.json?limit=250&page=2|raspberry-pi-4-model-b-4gb|default',
-                 'Raspberry Pi 4 Model B - 8GB RAM': 'collections/raspberry-pi/products.json?limit=250&page=2|raspberry-pi-4-model-b-8gb|default',
-                 'Raspberry Pi Zero 2 W': 'collections/raspberry-pi/products.json?limit=250&page=2|raspberry-pi-zero-2|default'}
+chigaco_items = {
+    'Raspberry Pi Zero 2 W Starter Kit': 'collections/raspberry-pi/products.json?limit=250|raspberry-pi-zero-2-w-starter-kit|default',
+    'Raspberry Pi 4 Model B - 1GB RAM': 'collections/raspberry-pi/products.json?limit=250&page=2|raspberry-pi-4-model-b-1gb|default',
+    'Raspberry Pi 4 Model B - 2GB RAM': 'collections/raspberry-pi/products.json?limit=250&page=2|raspberry-pi-4-model-b-2gb|default',
+    'Raspberry Pi 4 Model B - 4GB RAM': 'collections/raspberry-pi/products.json?limit=250&page=2|raspberry-pi-4-model-b-4gb|default',
+    'Raspberry Pi 4 Model B - 8GB RAM': 'collections/raspberry-pi/products.json?limit=250&page=2|raspberry-pi-4-model-b-8gb|default',
+    'Raspberry Pi Zero 2 W': 'collections/raspberry-pi/products.json?limit=250&page=2|raspberry-pi-zero-2|default'}
 
 vilros_items = {'Raspberry Pi 4 Model B -  4GB RAM': 'collections/raspberry-pi-boards/products.json?limit=250|raspberry-pi-4-4gb-ram|default',
 'Raspberry Pi 4 Model B -  2GB RAM': 'collections/raspberry-pi-boards/products.json?limit=250|raspberry-pi-4-2gb-ram|default',
