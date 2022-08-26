@@ -45,7 +45,7 @@ class HomePage(QtWidgets.QWidget):
         #self.image_table_header.setText("Image")
         font = QtGui.QFont()
         font.setFamily("Arial")
-        font.setPointSize(15) if platform.system() == "Darwin" else font.setPointSize(15*.75)
+        font.setPointSize(15)
         font.setBold(False)
         font.setWeight(50)
         #self.image_table_header.setFont(font)
