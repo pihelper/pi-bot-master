@@ -51,8 +51,8 @@ def write_data(path,data):
         json.dump(data, file)
     file.close()
 def create_settings():
-    if not exists('.data/settings.json'):
-        with open('.data/settings.json', "w") as file:
+    if not exists('./data/settings.json'):
+        with open('./data/settings.json', "w") as file:
             default_settings = {'webhook': '', 'webhooksuccess': True, 'webhookcart': False, 'webhookfailed': True, '2captchakey': '', 'capmonsterkey': '', 'notifsuccess': True, 'notifcaptcha': False, 'notiffailed' : True}
             json.dump(default_settings, file)
         file.close()
