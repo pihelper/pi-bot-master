@@ -198,13 +198,26 @@ class Shop:
                 time.sleep(float(self.error_delay))
 
     def get_tokens(self,req):
-        self.status_signal.emit({"msg": "Getting Auth Token", "status": "normal"})
         profile = self.profile
-        auth_token = self.get_checkout_token(req.text)
-        self.status_signal.emit({"msg": "Getting Shipping Rates", "status": "normal"})
-        jayson = self.session.get(f'{self.main_site}cart/shipping_rates.json?shipping_address[zip]={profile["shipping_zipcode"]}&shipping_address[country]=US&shipping_address[province]={profile["shipping_state"]}').json()
-        full_rate = f'{jayson["shipping_rates"][0]["source"]}-{jayson["shipping_rates"][0]["code"]}-{jayson["shipping_rates"][0]["price"]}'
-        return auth_token,full_rate
+        while True:
+            try:
+                self.status_signal.emit({"msg": "Getting Auth Token", "status": "normal"})
+                auth_token = self.get_checkout_token(req.text)
+                break
+            except:
+                self.status_signal.emit({"msg": "Error Fetching Auth", "status": "error"})
+                time.sleep(float(self.error_delay))
+        while True:
+            try:
+                self.status_signal.emit({"msg": "Getting Shipping Rates", "status": "normal"})
+                jayson = self.session.get(f'{self.main_site}cart/shipping_rates.json?shipping_address[zip]={profile["shipping_zipcode"]}&shipping_address[country]=US&shipping_address[province]={profile["shipping_state"]}').json()
+                full_rate = f'{jayson["shipping_rates"][0]["source"]}-{jayson["shipping_rates"][0]["code"]}-{jayson["shipping_rates"][0]["price"]}'
+                break
+            except:
+                self.status_signal.emit({"msg": "Error Fetching Shipping Rate", "status": "error"})
+                print(f'Shipping rate response -> {jayson}')
+                time.sleep(float(self.error_delay))
+        return auth_token, full_rate
 
     def submit_shipping(self):
         while True:
