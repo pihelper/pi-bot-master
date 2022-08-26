@@ -62,11 +62,14 @@ class Okdo:
         self.pk_live_key = ''
         self.nonce = ''
         self.title = ''
-
         self.main_site = self.info
         self.status_signal.emit({"msg": "Starting", "status": "normal"})
-        self.monitor()
-        self.checkout()
+        if 'okdo.com/us' not in str(self.info).lower():
+            self.status_signal.emit({"msg": "Invalid OKDO (US) Link", "status": "error"})
+        else:
+            self.monitor()
+            # I got lazy
+            self.checkout()
 
     def monitor(self):
         while True:

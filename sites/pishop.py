@@ -55,15 +55,17 @@ class PiShop:
         self.verification_token = ''
         self.cosignment_id = ''
         self.title = ''
-
-        self.main_site = self.info
-        self.status_signal.emit({"msg": "Starting", "status": "normal"})
-        self.monitor()
-        self.get_checkout_page()
-        self.submit_email()
-        self.submit_shipping()
-        self.submit_captcha()
-        self.submit_payment_info()
+        if 'pishop.us' not in str(self.info).lower():
+            self.status_signal.emit({"msg": "Invalid PiShop.us Link", "status": "error"})
+        else:
+            self.main_site = self.info
+            self.status_signal.emit({"msg": "Starting", "status": "normal"})
+            self.monitor()
+            self.get_checkout_page()
+            self.submit_email()
+            self.submit_shipping()
+            self.submit_captcha()
+            self.submit_payment_info()
 
     def monitor(self):
         while True:

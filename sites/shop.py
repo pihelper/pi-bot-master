@@ -155,11 +155,11 @@ class Shop:
                             time.sleep(float(self.monitor_delay))
                     elif products.status_code == 430:
                         self.status_signal.emit({"msg": f'IP Rate Limited!', "status": "error_no_log"})
-                        print(products.text)
                         self.update_random_proxy()
                         time.sleep(float(self.error_delay))
                     else:
                         self.status_signal.emit({"msg": f'Error getting stock [{products.status_code}]', "status": "error"})
+                        self.update_random_proxy()
                         time.sleep(float(self.error_delay))
                 elif variant != '':
                     cart = {'utf8': '✓', 'form_type': 'product', 'id': variant, 'quantity': '1'}
