@@ -1,4 +1,5 @@
 import json
+import os
 import platform
 import random
 import time
@@ -51,6 +52,10 @@ def write_data(path,data):
         json.dump(data, file)
     file.close()
 def create_settings():
+    # Checks for data directory, creates if not there
+    dir_path = './data/'
+    if not os.path.exists(dir_path):
+        os.makedirs(dir_path)
     path = './data/settings.json'
     if not exists(path):
         check_file = open(path, "x")
