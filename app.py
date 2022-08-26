@@ -21,9 +21,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setupUi(self)
         self.show()
     def setupUi(self, MainWindow):
+        self.version ='1.0 BETA'
         MainWindow.setFixedSize(1109, 600)
         MainWindow.setStyleSheet("background-color: #1E1E1E;")
-        MainWindow.setWindowTitle("Pi Bot")
+        MainWindow.setWindowTitle(f"Pi Bot - Version {self.version}")
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setStyleSheet("QMessageBox QLabel { color: #FFFFFF; }QMessageBox QPushButton { background-color: #60a8ce;color: #FFFFFF;}")
         self.sidebar = QtWidgets.QWidget(self.centralwidget)
