@@ -4,7 +4,7 @@ from sites.pishop import PiShop
 from sites.shop import Shop
 from pages.createdialog import CreateDialog
 from sites.sparkfun import Sparkfun
-from utils import get_profile, PiLogger, return_data, write_data, get_proxy_list
+from utils import get_profile, PiLogger, return_data, write_data, get_proxy_list, create_settings
 import urllib.request,sys,platform
 
 def no_abort(a, b, c):
@@ -15,6 +15,7 @@ class HomePage(QtWidgets.QWidget):
     def __init__(self,parent=None):
         super(HomePage, self).__init__(parent)
         self.setupUi(self)
+        create_settings()
         self.load_tasks()
     def setupUi(self, homepage):
         global tasks

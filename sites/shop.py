@@ -399,13 +399,15 @@ class Shop:
 
                 if 'order' in r.url or 'thank_you' in r.url:
                     self.status_signal.emit({"msg": "Successful Checkout", "status": "success"})
-                    good_web(r.url, self.image, f'Custom Shopify - {self.main_site}',
-                             self.product, self.profile["profile_name"],
-                             "{:.2f}".format(price_to_use))
+                    if self.settings['webhooksuccess']:
+                        good_web(r.url, self.image, f'Custom Shopify - {self.main_site}',
+                                 self.product, self.profile["profile_name"],
+                                 "{:.2f}".format(price_to_use))
                 else:
                     self.status_signal.emit({"msg": "Checkout Failed", "status": "error"})
-                    failed_web(r.url, self.image, f'Custom Shopify - {self.main_site}', self.product,
-                               self.profile["profile_name"], "{:.2f}".format(price_to_use))
+                    if self.settings['webhookfail']:
+                        failed_web(r.url, self.image, f'Custom Shopify - {self.main_site}', self.product,
+                                   self.profile["profile_name"], "{:.2f}".format(price_to_use))
 
         else:
             price_to_use = int(self.price) / 100

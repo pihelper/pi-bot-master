@@ -270,7 +270,7 @@ class ProfilesPage(QtWidgets.QWidget):
             self.cardyear_box.addItem(str(year))
         for card_type in ["Visa", "Mastercard", "American Express", "Discover"]:
             self.cardtype_box.addItem(card_type)
-        profiles = return_data("./data/profiles.json")
+        profiles = return_data("data/profiles.json")
         for profile in profiles:
             profile_name = profile["profile_name"]
             self.loadprofile_box.addItem(profile_name)

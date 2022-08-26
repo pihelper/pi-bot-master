@@ -3,6 +3,7 @@ import platform
 import random
 import time
 from datetime import datetime
+from os.path import exists
 
 import requests
 from colorama import init, Fore
@@ -29,14 +30,32 @@ class PiLogger:
     def success(self,task_id,msg):
         print(Fore.GREEN + "[{}][TASK {}] {}".format(self.ts(),task_id,msg))
 def return_data(path):
-    with open(path,"r") as file:
+    if not exists(path):
+        check_file = open(path, "a+")
+        check_file.close()
+        file = open(path, 'w+')
+        file.write("[]")
+        file.close()
+    with open(path, "r") as file:
         data = json.load(file)
     file.close()
     return data
 def write_data(path,data):
+    if not exists(path):
+        check_file = open(path, "a+")
+        check_file.close()
+        file = open(path,'w+')
+        file.write("[]")
+        file.close()
     with open(path, "w") as file:
         json.dump(data, file)
     file.close()
+def create_settings():
+    if not exists('data/settings.json'):
+        with open('data/settings.json', "w") as file:
+            default_settings = {'webhook': '', 'webhooksuccess': True, 'webhookcart': False, 'webhookfailed': True, '2captchakey': '', 'capmonsterkey': '', 'notifsuccess': True, 'notifcaptcha': False, 'notiffailed' : True}
+            json.dump(default_settings, file)
+        file.close()
 def get_profile(profile_name):
     profiles = return_data("./data/profiles.json")
     for p in profiles:
