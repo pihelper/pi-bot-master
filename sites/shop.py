@@ -1,5 +1,6 @@
 import random
 import time
+import traceback
 from os.path import exists
 
 import requests, re
@@ -194,7 +195,7 @@ class Shop:
                         time.sleep(float(self.error_delay))
             except Exception as e:
                 self.status_signal.emit({"msg": "Error getting product info", "status": "error"})
-                print(e.args)
+                print(traceback.format_exc())
                 time.sleep(float(self.error_delay))
 
     def get_tokens(self,req):
@@ -469,7 +470,8 @@ class Shop:
 
     def update_random_proxy(self):
         if self.proxy_list != False:
-            self.session.proxies.update(format_proxy(random.choice(self.proxy_list)))
+            proxy_to_use = format_proxy(random.choice(self.proxy_list))
+            self.session.proxies.update(proxy_to_use)
 
 
 

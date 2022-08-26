@@ -97,11 +97,11 @@ def format_proxy(proxy):
         proxy_parts = proxy.split(":")
         ip, port, user, passw = proxy_parts[0], proxy_parts[1], proxy_parts[2], proxy_parts[3]
         return {
-            "http": "http://{}:{}@{}:{}".format(user, passw, ip, port),
-            "https": "https://{}:{}@{}:{}".format(user, passw, ip, port)
+            "http": "http://{}:{}@{}:{}".format(user, passw, ip, port)
+            # ,"https": "https://{}:{}@{}:{}".format(user, passw, ip, port),
         }
     except IndexError:
-        return {"http": "http://" + proxy, "https": "https://" + proxy}
+        return {"http": "http://" + proxy}
 
 def get_captcha_cap(url, sitekey):
     settings = return_data("./data/settings.json")
