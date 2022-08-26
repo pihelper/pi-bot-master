@@ -1,5 +1,5 @@
 # Pi Bot
-[Support Discord](https://discord.gg/kfAqBKv)
+[Support Discord](https://discord.gg/FU5AuKpjEj)
 
 Pi Bot is a fork of [Bird Bot](https://github.com/natewong1313/bird-bot), a bot aimed at helping people obtain consoles during the pandemic.
 
@@ -14,4 +14,4 @@ Instead of switches, Pi Bot aims at helping people obtain Raspberry Pis + other 
 </p>
 
 ## Installation
-[View The Docs Here](https://nateskicks13.gitbook.io/bird-bot/)
+[View The Docs Here](https://sneakerhutt.gitbook.io/pi-bot/)
