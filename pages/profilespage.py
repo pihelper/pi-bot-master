@@ -11,7 +11,6 @@ class ProfilesPage(QtWidgets.QWidget):
         self.setupUi(self)
     def setupUi(self, profilespage):
         self.country_json = return_data('./data/countries.json')
-        print(self.country_json)
         self.profilespage = profilespage
         self.profilespage.setAttribute(QtCore.Qt.WA_StyledBackground, True)
         self.profilespage.setGeometry(QtCore.QRect(60, 0, 1041, 601))
