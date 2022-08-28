@@ -17,7 +17,7 @@ pi_sites = {'ThePiHut': 'https://thepihut.com/',
                          'Cool Components (UK)' : 'https://coolcomponents.co.uk/',
                          'PiShop (US)' : 'https://www.pishop.us/',
                          'Sparkfun': 'https://www.sparkfun.com/',
-                         'OKDO (US)': 'https://www.odko.com/us/'}
+                         'OKDO': 'https://www.odko.com/'}
 
 def get_shopify_url(name):
     return pi_sites[name]
@@ -222,7 +222,7 @@ class CreateDialog(QtWidgets.QDialog):
             self.link.setVisible(True)
             self.link.setText(task_tab.product)
             self.link.setPlaceholderText('Product Link')
-        elif 'Okdo' in self.site_box.currentText():
+        elif 'OKDO' in self.site_box.currentText():
             self.captcha_box.setVisible(False)
             self.account_user.setVisible(False)
             self.account_pass.setVisible(False)

@@ -10,10 +10,12 @@ class ProfilesPage(QtWidgets.QWidget):
         super(ProfilesPage, self).__init__(parent)
         self.setupUi(self)
     def setupUi(self, profilespage):
+        self.country_json = return_data('./data/countries.json')
+        print(self.country_json)
         self.profilespage = profilespage
         self.profilespage.setAttribute(QtCore.Qt.WA_StyledBackground, True)
         self.profilespage.setGeometry(QtCore.QRect(60, 0, 1041, 601))
-        self.profilespage.setStyleSheet("QComboBox::drop-down {    border: 0px;}QComboBox::down-arrow {    image: url(:/images/down_icon.png);    width: 14px;    height: 14px;}QComboBox{    padding: 1px 0px 1px 3px;}QLineEdit:focus {   border: none;   outline: none;}")
+        self.profilespage.setStyleSheet("QComboBox::drop-down {    border: 0px;}QComboBox::down-arrow {    image: url(:/images/down_icon.png);    width: 14px;    height: 14px;}QComboBox{    padding: 1px 0px 1px 3px;}QLineEdit:focus {   border: none;   outline: none;} QSpinBox::up-button {subcontrol-origin: border;subcontrol-position: top right;width: 8px; border-image: url(:/images/uparrow_icon.png) 1;border-width: 1px;}QSpinBox::down-button {subcontrol-origin: border;subcontrol-position: bottom right;width: 8px;border-image: url(:/images/downarrow_icon.png) 1;border-width: 1px;border-top-width: 0;}")
         self.shipping_card = QtWidgets.QWidget(self.profilespage)
         self.shipping_card.setGeometry(QtCore.QRect(30, 70, 313, 501))
         self.shipping_card.setStyleSheet("background-color: #232323;border-radius: 20px;border: 1px solid #2e2d2d;")
@@ -261,11 +263,11 @@ class ProfilesPage(QtWidgets.QWidget):
         self.set_data()
         self.shipping_state_box.setVisible(self.shipping_country_box.currentText() == 'United States')
         self.billing_state_box.setVisible(self.billing_country_box.currentText() == 'United States')
-        self.shipping_country_box.activated.connect(self.shipping_country_adjust)
-        self.billing_country_box.activated.connect(self.billing_country_adjust)
-
+        self.shipping_country_box.activated.connect(self.fill_shipping_states)
+        self.billing_country_box.activated.connect(self.fill_billing_states)
         QtCore.QMetaObject.connectSlotsByName(profilespage)
-    
+        self.fill_countries()
+
     def set_data(self):
         for state in ["AL", "AK", "AS", "AZ", "AR", "CA", "CO", "CT", "DE", "DC", "FM", "FL", "GA", "GU", "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MH", "MD", "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ", "NM", "NY", "NC", "ND", "MP", "OH", "OK", "OR", "PW", "PA", "PR", "RI", "SC", "SD", "TN", "TX", "UT", "VT", "VI", "VA", "WA", "WV", "WI", "WY"]:
             self.shipping_state_box.addItem(state)
@@ -347,7 +349,7 @@ class ProfilesPage(QtWidgets.QWidget):
             "shipping_a2": self.shipping_address2_edit.text(),
             "shipping_city": self.shipping_city_edit.text(),
             "shipping_zipcode": self.shipping_zipcode_edit.text(),
-            "shipping_state": self.shipping_state_box.currentText(),
+            "shipping_state": self.shipping_state_box.currentText() if self.shipping_state_box.isVisible() else '',
             "shipping_country": self.shipping_country_box.currentText(),
             "billing_fname": self.billing_fname_edit.text(),
             "billing_lname": self.billing_lname_edit.text(),
@@ -357,7 +359,7 @@ class ProfilesPage(QtWidgets.QWidget):
             "billing_a2": self.billing_address2_edit.text(),
             "billing_city": self.billing_city_edit.text(),
             "billing_zipcode": self.billing_zipcode_edit.text(),
-            "billing_state": self.billing_state_box.currentText(),
+            "billing_state": self.billing_state_box.currentText() if self.billing_state_box.isVisible() else '',
             "billing_country": self.billing_country_box.currentText(),
             "card_number": self.cardnumber_edit.text(),
             "card_month": self.cardmonth_box.currentText(),
@@ -417,3 +419,27 @@ class ProfilesPage(QtWidgets.QWidget):
         self.cardtype_box.setCurrentIndex(0)
         self.cardcvv_edit.setText("")
         QtWidgets.QMessageBox.information(self, "Pi Bot", "Deleted Profile")
+
+    def fill_countries(self):
+        for country in self.country_json:
+            self.shipping_country_box.addItem(country['name'])
+            self.billing_country_box.addItem(country['name'])
+
+    def fill_shipping_states(self):
+        self.shipping_state_box.clear()
+        self.shipping_state_box.setVisible(False)
+        for country in self.country_json:
+            if self.shipping_country_box.currentText() == country['name']:
+                if len(country['provinces']) != 0:
+                    for province in country['provinces']:
+                        self.shipping_state_box.addItem(province['name'])
+                    self.shipping_state_box.setVisible(True)
+    def fill_billing_states(self):
+        self.billing_state_box.clear()
+        self.billing_state_box.setVisible(False)
+        for country in self.country_json:
+            if self.billing_country_box.currentText() == country['code']:
+                if len(country['provinces']) != 0:
+                    for province in country['provinces']:
+                        self.billing_state_box.addItem(province['code'])
+                    self.billing_state_box.setVisible(True)

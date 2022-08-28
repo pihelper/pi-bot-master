@@ -10,6 +10,8 @@ import requests
 from colorama import init, Fore
 from win10toast import ToastNotifier
 
+toast = ToastNotifier()
+
 normal_color = Fore.CYAN
 e_key = "YnJ1aG1vbWVudA==".encode()
 BLOCK_SIZE=16
@@ -151,7 +153,6 @@ def get_captcha_two(url, sitekey):
                     return r['request']
 
 def send_notif(item,mode):
-    toast = ToastNotifier()
     try:
         if mode == 'success':
             toast.show_toast('[Pi Bot] Successful Checkout',
@@ -173,3 +174,15 @@ def send_notif(item,mode):
                              threaded=True)
     except:
         print('Error sending notification (Most likely non Windows)')
+
+def get_country_code(country):
+    for countries in return_data('./data/countries.json'):
+        if countries['name'] == country:
+            return countries['code']
+def get_state_name(country, province):
+    for countries in return_data('./data/countries.json'):
+        if countries['name'] == country:
+            for provinces in countries['provinces']:
+                if provinces['code'] == province:
+                    return provinces['name']
+
