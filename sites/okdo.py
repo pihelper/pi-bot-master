@@ -65,7 +65,7 @@ class Okdo:
 
         if 'okdo.com' not in str(self.info).lower():
             self.status_signal.emit({"msg": "Invalid OKDO link!", "status": "error"})
-        elif not exists('../chromedriver.exe'):
+        elif not exists('./chromedriver.exe'):
             self.status_signal.emit({"msg": "ChromeDriver.exe not found!", "status": "error"})
         else:
             self.monitor()

@@ -34,7 +34,7 @@ class Shop:
         needs_chrome = False
 
         if 'pimoroni' in self.main_site:
-            if exists('../chromedriver.exe'):
+            if exists('./chromedriver.exe'):
                 self.browser_login()
             else:
                 self.status_signal.emit({"msg": "No ChromeDriver found!", "status": "error"})
