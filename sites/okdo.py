@@ -36,10 +36,13 @@ def get_json(html):
     spli = sub.split("<")[0]
     return json.loads(spli.strip())
 
+# Needs two, as a majority of OKDO pages use the ATC value, but some US pages use the shortlink to store PID
 def get_pid_new(html):
     soup = BeautifulSoup(html,'html.parser')
-    return soup.find('button', {'name': 'add-to-cart'}).get('value')
-
+    try:
+        return soup.find('button', {'name': 'add-to-cart'}).get('value')
+    except:
+        return soup.find('link', {'rel': 'shortlink'}).get('href').split('=')[1]
 class Okdo:
     def __init__(self, task_id, status_signal, product_signal, product, info, size, profile, proxy, monitor_delay, error_delay,captcha_type, qty):
         self.task_id, self.status_signal, self.product_signal, self.product, self.info, self.size, self.profile, self.monitor_delay, self.error_delay,self.captcha_type, self.qty = task_id, status_signal, product_signal, product, info, size, profile,monitor_delay, error_delay, captcha_type, qty
@@ -81,6 +84,7 @@ class Okdo:
                     data_json = get_json(get_item_page.text)
                     if self.pid == '':
                         self.pid = get_pid_new(get_item_page.content)
+                        print(self.pid)
                     if self.title == '':
                         self.title = check_name(data_json)
                         prod_id = 'UK' if self.site_prefix == '' else str(self.site_prefix).upper()[1:]
