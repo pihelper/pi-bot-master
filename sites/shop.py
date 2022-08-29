@@ -198,9 +198,8 @@ class Shop:
                         print(req.url)
                         self.session.cookies.clear()
                         time.sleep(float(self.error_delay))
-            except Exception as e:
+            except Exception:
                 self.status_signal.emit({"msg": "Error getting product info", "status": "error"})
-                print(traceback.format_exc())
                 time.sleep(float(self.error_delay))
 
     def get_tokens(self,req):
