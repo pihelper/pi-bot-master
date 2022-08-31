@@ -268,9 +268,6 @@ class ProfilesPage(QtWidgets.QWidget):
         self.fill_countries()
 
     def set_data(self):
-        for state in ["AL", "AK", "AS", "AZ", "AR", "CA", "CO", "CT", "DE", "DC", "FM", "FL", "GA", "GU", "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MH", "MD", "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ", "NM", "NY", "NC", "ND", "MP", "OH", "OK", "OR", "PW", "PA", "PR", "RI", "SC", "SD", "TN", "TX", "UT", "VT", "VI", "VA", "WA", "WV", "WI", "WY"]:
-            self.shipping_state_box.addItem(state)
-            self.billing_state_box.addItem(state)
         for month in range(1,13):
             self.cardmonth_box.addItem(str(month)) if month>9 else self.cardmonth_box.addItem("0"+str(month))
         for year in range(2020,2031):
@@ -294,15 +291,20 @@ class ProfilesPage(QtWidgets.QWidget):
             self.billing_address2_edit.setText(self.shipping_address2_edit.text())
             self.billing_city_edit.setText(self.shipping_city_edit.text())
             self.billing_zipcode_edit.setText(self.shipping_zipcode_edit.text())
+            self.fill_billing_states()
             self.billing_state_box.setCurrentIndex(self.billing_state_box.findText(self.shipping_state_box.currentText()))
-            self.shipping_state_box.setVisible(self.shipping_country_box.currentText() == 'United States')
-            self.billing_state_box.setVisible(self.billing_country_box.currentText() == 'United States')
+            self.shipping_country_adjust()
+            self.billing_country_adjust()
 
     def shipping_country_adjust(self):
-        self.shipping_state_box.setVisible(self.shipping_country_box.currentText() == 'United States')
-        
+        for countries in self.country_json:
+            if countries['name'] == self.shipping_country_box.currentText():
+                self.shipping_state_box.setVisible(len(countries['provinces']) > 0)
+
     def billing_country_adjust(self):
-        self.billing_state_box.setVisible(self.billing_country_box.currentText() == 'United States')
+        for countries in self.country_json:
+            if countries['name'] == self.billing_country_box.currentText():
+                self.billing_state_box.setVisible(len(countries['provinces']) > 0)
        
        
     def load_profile(self):
@@ -431,13 +433,13 @@ class ProfilesPage(QtWidgets.QWidget):
             if self.shipping_country_box.currentText() == country['name']:
                 if len(country['provinces']) != 0:
                     for province in country['provinces']:
-                        self.shipping_state_box.addItem(province['name'])
+                        self.shipping_state_box.addItem(province['code'])
                     self.shipping_state_box.setVisible(True)
     def fill_billing_states(self):
         self.billing_state_box.clear()
         self.billing_state_box.setVisible(False)
         for country in self.country_json:
-            if self.billing_country_box.currentText() == country['code']:
+            if self.billing_country_box.currentText() == country['name']:
                 if len(country['provinces']) != 0:
                     for province in country['provinces']:
                         self.billing_state_box.addItem(province['code'])

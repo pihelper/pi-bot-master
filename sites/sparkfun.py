@@ -2,6 +2,8 @@ import logging
 import random
 import time
 import requests
+from bs4 import BeautifulSoup
+
 from utils import return_data, send_notif, format_proxy
 from webhook import failed_spark_web, good_spark_web, cart_web
 
@@ -24,14 +26,13 @@ class Sparkfun:
         self.price = ''
         account_info = str(self.size).split('|')
         self.req_login(account_info[0], account_info[1])
-        self.check_session()
         self.get_item()
         self.atc()
         self.go_to_shipping()
         self.submit_shipping()
         self.submit_order_fast()
 
-    def get_smart_qty(qty, max_qty):
+    def get_smart_qty(self, qty, max_qty):
         try:
             if qty >= (max_qty * 2):
                 return str(max_qty)
@@ -64,7 +65,9 @@ class Sparkfun:
         ind = html.index(ind)
         to_parse = html[ind + len(ind)::]
         return to_parse.split('"')[1]
-
+    def get_price_new(self,html):
+        soup = BeautifulSoup(html, 'html.parser')
+        return soup.find('input', {'name': 'total_price'}).get('value')
     def get_sparkrev(self, html):
         hey = 'sparkrev: '
         ind = html.index(hey)
@@ -143,8 +146,8 @@ class Sparkfun:
                 else:
                     self.status_signal.emit({"msg": "Waiting for restock", "status": "monitoring"})
                 time.sleep(float(self.monitor_delay))
-            except Exception as e:
-                print(e)
+            except Exception:
+                self.status_signal.emit({"msg": "Error on monitor", "status": "error"})
                 time.sleep(float(self.error_delay))
             if has_carted:
                 break
@@ -170,9 +173,7 @@ class Sparkfun:
                 'address[po_box]': 'false'}
         self.session.post('https://www.sparkfun.com/orders/set_shipping_address',data=set_address_data)
         self.status_signal.emit({"msg": "Getting Shipping Methods", "status": "normal"})
-        shipping_quote = {'name': 'shipping_method', 'id': 'shipping_methods'}
-        quote_get = self.session.post('https://www.sparkfun.com/orders/shipping_quotes', data=shipping_quote)
-        self.shipping_method = self.get_shipping_method(quote_get.text)
+        self.session.get('https://www.sparkfun.com/orders/shipping_quotes')
         self.shipping_zone = self.get_shipping_zone()
 
         data = {'csrf_token': self.token,
@@ -184,10 +185,11 @@ class Sparkfun:
                 'shipping_address[entry_city]': self.profile['billing_city'],
                 'shipping_address[entry_zone]': self.shipping_zone,
                 'shipping_address[entry_postcode]': self.profile['billing_zipcode'],
-                'shipping_methods[1][ship_immediately]': self.shipping_method}
+                'shipping_methods[1][ship_immediately]': '116'}
 
+        self.status_signal.emit({"msg": "Submitting shipping", "status": "normal"})
         submit = self.session.post('https://www.sparkfun.com/orders/shipping_update',data=data)
-        self.price = self.get_price(submit.text)
+        self.price = self.get_price_new(submit.content)
         if 'billing' in submit.url:
             self.status_signal.emit({"msg": "Redirected to billing", "status": "normal"})
 
@@ -218,7 +220,6 @@ class Sparkfun:
         # On successful checkout, you will be redirected to https://www.sparkfun.com/orders/index
         if 'index' in create.url:
             self.status_signal.emit({"msg": "Successful Checkout", "status": "success"})
-
             if self.settings['webhooksuccess']:
                 good_spark_web(f'https://www.sparkfun.com/products/{str(self.product)}', self.image,
                                'Sparkfun',
