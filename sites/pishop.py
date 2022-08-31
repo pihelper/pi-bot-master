@@ -67,10 +67,10 @@ class PiShop:
             self.submit_captcha()
             self.submit_payment_info()
     def invalid_captcha_key(self):
-        if self.captcha_type == 'CapMonster' and self.settings['2captchakey'] == '':
+        if self.captcha_type == 'CapMonster' and self.settings['capmonsterkey'] != '':
             self.status_signal.emit({"msg": "CapMonster key is empty!", "status": "error"})
             return True
-        elif self.captcha_type == '2Captcha':
+        elif self.captcha_type == '2Captcha' and self.settings['2captchakey'] != '':
             self.status_signal.emit({"msg": "2Captcha Key is empty!", "status": "error"})
             return True
         else:
