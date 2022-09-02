@@ -8,7 +8,7 @@ import urllib3
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 
-from utils import return_data, format_proxy
+from utils import return_data, format_proxy, load_session, save_session
 from webhook import good_web, failed_web, cart_web
 
 
@@ -35,7 +35,7 @@ class Shop:
 
         if 'pimoroni' in self.main_site:
             if exists('./chromedriver.exe'):
-                self.browser_login()
+                self.get_session()
             else:
                 self.status_signal.emit({"msg": "No ChromeDriver found!", "status": "error"})
                 needs_chrome = True
@@ -86,6 +86,21 @@ class Shop:
         phony = re.sub('[^A-Za-z0-9]+', '', phone).strip()
         return '(' + phony[:3] + ') ' + phony[3:6] + "-" + phony[-4:]
 
+    def get_session(self):
+        self.status_signal.emit({"msg": "Checking for session", "status": "normal"})
+        session = load_session(self.profile['shipping_email'], self.main_site)
+        if session == False:
+            self.browser_login()
+        else:
+            for cookies in session[0]:
+                self.session.cookies.set(cookies, session[0][cookies])
+            self.status_signal.emit({"msg": "Validating session", "status": "normal"})
+            account_get = self.session.get(self.main_site + 'account')
+            if 'login' in account_get.url:
+                self.browser_login()
+            else:
+                self.status_signal.emit({"msg": "Valid session found!", "status": "normal"})
+
     def browser_login(self):
         while True:
             self.status_signal.emit({"msg": "Awaiting Login", "status": "normal"})
@@ -112,8 +127,9 @@ class Shop:
             driver.close()
             self.status_signal.emit({"msg": "Checking login session", "status": "normal"})
             get = self.session.get(f'{self.main_site}account')
-            if 'login?' not in get.url:
+            if 'login' not in get.url:
                 self.status_signal.emit({"msg": "Valid session found", "status": "normal"})
+                save_session(self.profile['shipping_email'], self.main_site, self.session)
                 return
             else:
                 self.status_signal.emit({"msg": "Session failed", "status": "error"})

@@ -4,7 +4,7 @@ import time
 import requests
 from bs4 import BeautifulSoup
 
-from utils import return_data, send_notif, format_proxy
+from utils import return_data, send_notif, format_proxy, load_session, save_session
 from webhook import failed_spark_web, good_spark_web, cart_web
 
 
@@ -25,7 +25,7 @@ class Sparkfun:
         self.current = ''
         self.price = ''
         account_info = str(self.size).split('|')
-        self.req_login(account_info[0], account_info[1])
+        self.get_session(account_info[0], account_info[1])
         self.get_item()
         self.atc()
         self.go_to_shipping()
@@ -74,6 +74,22 @@ class Sparkfun:
         to_parse = html[ind::]
         return to_parse.split("'")[1]
 
+    def get_session(self, user, passwd):
+        self.status_signal.emit({"msg": "Checking for session", "status": "normal"})
+        session = load_session(user, 'https://www.sparkfun.com/')
+        if session == False:
+            self.req_login(user,passwd)
+        else:
+            for cookies in session[0]:
+                self.session.cookies.set(cookies, session[0][cookies])
+            self.status_signal.emit({"msg": "Validating session", "status": "normal"})
+            account_get = self.session.get('https://www.sparkfun.com/account/')
+            if 'login' in account_get.url:
+                self.status_signal.emit({"msg": "Session no longer valid", "status": "normal"})
+                self.req_login(user,passwd)
+            else:
+                self.status_signal.emit({"msg": "Valid session found!", "status": "normal"})
+
     def req_login(self, user, passwd):
         self.status_signal.emit({"msg": "Getting auth", "status": "normal"})
         token = self.get_checkout_token(self.session.get('https://www.sparkfun.com/account/login').text)
@@ -94,6 +110,7 @@ class Sparkfun:
                 self.session.post('https://www.sparkfun.com/account/login', data=data)
                 if self.check_session():
                     self.status_signal.emit({"msg": "Valid login session found", "status": "normal"})
+                    save_session(user, 'https://www.sparkfun.com/', self.session)
                     break
                 else:
                     self.status_signal.emit({"msg": "Login failed! Check credentials", "status": "error"})
