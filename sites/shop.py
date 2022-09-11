@@ -122,17 +122,11 @@ class Shop:
             while 'login' in driver.current_url or '/challenge' in driver.current_url:
                 time.sleep(0.1)
 
-            for cookie in driver.get_cookies():
-                self.session.cookies.set(cookie['name'], cookie['value'], domain=cookie['domain'])
+            save_session(self.profile['shipping_email'], self.main_site, self.session)
             driver.close()
             self.status_signal.emit({"msg": "Checking login session", "status": "normal"})
-            get = self.session.get(f'{self.main_site}account')
-            if 'login' not in get.url:
-                self.status_signal.emit({"msg": "Valid session found", "status": "normal"})
-                save_session(self.profile['shipping_email'], self.main_site, self.session)
-                return
-            else:
-                self.status_signal.emit({"msg": "Session failed", "status": "error"})
+            self.get_session()
+            return
     def atc(self):
         variant = ''
         found = ''
