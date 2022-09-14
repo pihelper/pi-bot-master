@@ -190,6 +190,7 @@ def load_session(email, site):
     current_sessions = return_data('./data/sessions.json')
     for session in current_sessions:
         if session['email'] == email and session['site'] == site:
+            print('Stored session found')
             return session['session']
     return False
 
@@ -202,10 +203,18 @@ def save_session(email, site, session):
 
     for ses in current_sessions:
         if ses['email'] == email and ses['site'] == site:
+            print('Overwriting session')
             current_sessions.remove(ses)
             break
     current_sessions.append(session_data)
     write_data('./data/sessions.json',current_sessions)
 
+def delete_session(email, site):
+    current_sessions = return_data('./data/sessions.json')
 
-
+    for ses in current_sessions:
+        if ses['email'] == email and ses['site'] == site:
+            print('Deleting session')
+            current_sessions.remove(ses)
+            break
+    write_data('./data/sessions.json', current_sessions)

@@ -366,6 +366,8 @@ class TaskTab(QtWidgets.QWidget):
         elif msg["status"] == "alt":
             self.status_label.setStyleSheet("color: rgb(242, 166, 137);")
             logger.alt(self.task_id,msg["msg"])
+        elif msg["status"] == "alt_no_log":
+            self.status_label.setStyleSheet("color: rgb(242, 166, 137);")
         elif msg["status"] == "error_no_log":
             self.status_label.setStyleSheet("color: rgb(252, 81, 81);")
         elif msg["status"] == "error":
