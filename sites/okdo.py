@@ -117,6 +117,12 @@ class Okdo:
                         self.status_signal.emit({"msg": "Waiting for restock", "status": "monitoring"})
                         self.update_random_proxy()
                         time.sleep(float(self.monitor_delay))
+                elif get_item_page.status_code == 404:
+                    self.status_signal.emit({"msg": "Link is dead/not valid", "status": "error_no_log"})
+                    time.sleep(float(self.error_delay))
+                else:
+                    self.status_signal.emit({"msg": f"Error on page get [{get_item_page.status_code}]", "status": "error"})
+                    time.sleep(float(self.error_delay))
             except Exception as e:
                 self.status_signal.emit({"msg": f"Error on monitor [{get_item_page.status_code}]", "status": "error"})
                 self.update_random_proxy()
