@@ -22,7 +22,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setupUi(self)
         self.show()
     def setupUi(self, MainWindow):
-        self.version ='1.06'
+        self.version ='1.07'
         MainWindow.setFixedSize(1109, 600)
         MainWindow.setStyleSheet("background-color: #1E1E1E;")
         MainWindow.setWindowTitle(f"Pi Bot - Version {self.version}")
