@@ -1,4 +1,6 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
+
+from sites.adafruit import Adafruit
 from sites.okdo import Okdo
 from sites.pishop import PiShop
 from sites.shop import Shop
@@ -40,16 +42,11 @@ class HomePage(QtWidgets.QWidget):
         spacerItem = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
         self.verticalLayout.addItem(spacerItem)
         self.scrollArea.setWidget(self.scrollAreaWidgetContents)
-        #self.image_table_header = QtWidgets.QLabel(self.tasks_card)
-        #self.image_table_header.setGeometry(QtCore.QRect(40, 7, 51, 31))
-        #self.image_table_header.setText("Image")
         font = QtGui.QFont()
         font.setFamily("Arial")
         font.setPointSize(15) if platform.system() == "Darwin" else font.setPointSize(10)
         font.setBold(False)
         font.setWeight(50)
-        #self.image_table_header.setFont(font)
-        #self.image_table_header.setStyleSheet("color: rgb(234, 239, 239);border: none;")
         self.product_table_header = QtWidgets.QLabel(self.tasks_card)
         self.product_table_header.setGeometry(QtCore.QRect(190, 7, 61, 31))
         self.product_table_header.setFont(font)
@@ -196,13 +193,12 @@ class HomePage(QtWidgets.QWidget):
         QtCore.QMetaObject.connectSlotsByName(homepage)
 
 
-
     def load_tasks(self):
         tasks_data = return_data("./data/tasks.json")
         write_data("./data/tasks.json",[])
         try:
             for task in tasks_data:
-                tab = TaskTab(task["site"],task["product"], task["info"], task["size"],task["profile"],task["proxies"],task["monitor_delay"], task["error_delay"], task["captcha_type"], task['qty'],self.stop_all_tasks,self.scrollAreaWidgetContents)
+                tab = TaskTab(task["site"],task["product"], task["info"], task["size"],task["profile"],task["proxies"],task['mode'], task["monitor_delay"], task["error_delay"], task["captcha_type"], task['qty'],self.stop_all_tasks,self.scrollAreaWidgetContents)
                 self.verticalLayout.takeAt(self.verticalLayout.count()-1)
                 self.verticalLayout.addWidget(tab)
                 spacerItem = QtWidgets.QSpacerItem(10, 10, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
@@ -239,20 +235,19 @@ class HomePage(QtWidgets.QWidget):
                 pass
 
 class TaskTab(QtWidgets.QWidget):
-    def __init__(self,site,product, info, size,profile,proxies,monitor_delay,error_delay,captcha_type,qty,stop_all,parent=None):
+    def __init__(self,site,product, info, size,profile,proxies,mode,monitor_delay,error_delay,captcha_type,qty,stop_all,parent=None):
         super(TaskTab, self).__init__(parent)
         self.task_id = str(int(tasks_total_count.text())+1)
         tasks_total_count.setText(self.task_id)
-        self.site,self.product,self.info, self.size, self.profile,self.proxies, self.monitor_delay, self.error_delay, self.captcha_type,self.qty, self.stop_all = site,product, info, size,profile,proxies,monitor_delay, error_delay,captcha_type, qty,stop_all
+        self.site,self.product,self.info, self.size, self.profile,self.proxies, self.mode, self.monitor_delay, self.error_delay, self.captcha_type,self.qty, self.stop_all = site,product, info, size,profile,proxies, mode,monitor_delay, error_delay,captcha_type, qty,stop_all
         self.setupUi(self)
         tasks.append(self)
         tasks_data = return_data("./data/tasks.json")
-        task_data = {"task_id": self.task_id,"site":self.site,"product": self.product, "info" : self.info, "size" : self.size,"profile": self.profile,"proxies": self.proxies, "monitor_delay": self.monitor_delay, "error_delay": self.error_delay,"captcha_type":self.captcha_type, 'qty': self.qty}
+        task_data = {"task_id": self.task_id,"site":self.site,"product": self.product, "info" : self.info, "size" : self.size,"profile": self.profile,"proxies": self.proxies,'mode': self.mode, "monitor_delay": self.monitor_delay, "error_delay": self.error_delay,"captcha_type":self.captcha_type, 'qty': self.qty}
         tasks_data.append(task_data)
         write_data("./data/tasks.json",tasks_data)
     def setupUi(self,TaskTab):
         self.running = False
-
         self.TaskTab = TaskTab
         self.TaskTab.setMinimumSize(QtCore.QSize(0, 32))
         self.TaskTab.setMaximumSize(QtCore.QSize(16777215, 50))
@@ -322,6 +317,9 @@ class TaskTab(QtWidgets.QWidget):
         self.site_label.raise_()
         self.info_label = QtWidgets.QLabel(self.TaskTab)
         self.info_label.hide()
+        self.mode_label = QtWidgets.QLabel(self.TaskTab)
+        self.mode_label.hide()
+
         self.captcha_label = QtWidgets.QLabel(self.TaskTab)
         self.captcha_label.hide()
         self.size_label = QtWidgets.QLabel(self.TaskTab)
@@ -338,7 +336,7 @@ class TaskTab(QtWidgets.QWidget):
 
     def load_labels(self):
         self.id_label.setText(self.task_id)
-        self.product_label.setText(self.product)
+        self.product_label.setText(f'{self.product} [{self.qty}]')
         self.profile_label.setText(self.profile)
         self.proxies_label.setText(self.proxies)
         self.status_label.setText("Idle")
@@ -346,6 +344,7 @@ class TaskTab(QtWidgets.QWidget):
         self.site_label.setText(self.site)
         self.info_label.setText(self.info)
         self.size_label.setText(self.size)
+        self.mode_label.setText(self.mode)
         self.monitor_label.setText(self.monitor_delay)
         self.error_label.setText(self.error_delay)
         self.captcha_label.setText(self.captcha_type)
@@ -404,6 +403,7 @@ class TaskTab(QtWidgets.QWidget):
                 self.size_label.text(),
                 self.profile_label.text(),
                 self.proxies_label.text(),
+                self.mode_label.text(),
                 self.monitor_label.text(),
                 self.error_label.text(),
                 self.captcha_label.text(),
@@ -416,7 +416,7 @@ class TaskTab(QtWidgets.QWidget):
     def stop(self,event):
         self.task.stop()
         self.running = False
-        self.product_label.setText(self.product)
+        self.product_label.setText(f'{self.product} [{self.qty}]')
         self.update_status({"msg":"Stopped","status":"idle"})
         self.start_btn.raise_()
         from app import MainWindow
@@ -449,7 +449,7 @@ class TaskTab(QtWidgets.QWidget):
             self.product = self.edit_dialog.link.text()
             self.info = self.edit_dialog.link.text()
             self.size = f'{self.edit_dialog.account_user.text()}|{self.edit_dialog.account_pass.text()}'
-        elif 'PiShop' in self.site or 'OKDO' in self.site:
+        elif 'PiShop' in self.site or 'OKDO' in self.site or 'Adafruit' in self.site:
             self.product = self.edit_dialog.link.text()
             self.info = self.edit_dialog.link.text()
             self.size = ''
@@ -457,6 +457,7 @@ class TaskTab(QtWidgets.QWidget):
             self.product=self.edit_dialog.shopify_select.currentText()
             self.info = self.info_label.text()
             self.size = self.size_label.text()
+            self.mode = self.edit_dialog.mode_box.currentText()
         self.profile=self.edit_dialog.profile_box.currentText()
         self.proxies=self.edit_dialog.proxies_box.currentText()
         self.monitor_delay = self.edit_dialog.monitor_edit.text()
@@ -491,8 +492,8 @@ class TaskThread(QtCore.QThread):
     def __init__(self):
         QtCore.QThread.__init__(self)
 
-    def set_data(self,task_id,site,product,info,size,profile,proxies,monitor_delay,error_delay,captcha_type,qty):
-        self.task_id,self.site,self.product,self.info,self.size,self.profile,self.proxies,self.monitor_delay,self.error_delay, self.captcha_type, self.qty = task_id,site,product,info,size,profile,proxies,monitor_delay,error_delay,captcha_type, qty
+    def set_data(self,task_id,site,product,info,size,profile,proxies,mode,monitor_delay,error_delay,captcha_type,qty):
+        self.task_id,self.site,self.product,self.info,self.size,self.profile,self.proxies,self.mode, self.monitor_delay,self.error_delay, self.captcha_type, self.qty = task_id,site,product,info,size,profile,proxies,mode,monitor_delay,error_delay,captcha_type, qty
 
     def run(self):
         profile,proxy = get_profile(self.profile),get_proxy_list(self.proxies)
@@ -518,8 +519,11 @@ class TaskThread(QtCore.QThread):
         elif 'OKDO' in self.site:
             Okdo(self.task_id, self.status_signal, self.product_signal, self.product, self.info, self.size, profile,
                  proxy, self.monitor_delay, self.error_delay,self.captcha_type, self.qty)
+        elif 'Adafruit' in self.site:
+            Adafruit(self.task_id, self.status_signal, self.product_signal, self.product, self.size, profile,
+                     proxy, self.monitor_delay, self.error_delay, self.captcha_type, self.qty)
         else:
-            Shop(self.task_id, self.status_signal, self.product_signal, self.product, self.info, self.size, profile, proxy, self.monitor_delay,self.error_delay)
+            Shop(self.task_id, self.status_signal, self.product_signal, self.product, self.info, self.size, profile, proxy, self.monitor_delay,self.error_delay, self.qty)
 
     def stop(self):
         self.terminate()

@@ -86,7 +86,7 @@ class PiShop:
                         self.pid = soup.find_all(attrs={"name": "product_id"})[0]['value']
                     if self.title == '':
                         self.title = str(soup.find('title').get_text()).replace(' - PiShop.us','').split(' - CM4')[0]
-                        self.product_signal.emit(self.title)
+                        self.product_signal.emit(f'{self.title} [{self.qty}]')
                     stock_json = check_stock(get_item_page.text)
                     if self.csrf_token == '':
                         self.csrf_token = stock_json['csrf_token']

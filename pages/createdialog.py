@@ -1,7 +1,8 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 import sys,platform
 
-from sites.site_keys import chigaco_items, vilros_items, pihut_items, sbc_items, cool_items, pimoroni_items, pi3g_items
+from sites.site_keys import chigaco_items, vilros_items, pihut_items, sbc_items, cool_items, pimoroni_items, pi3g_items, \
+    ameri_items, envistia_items
 
 
 def no_abort(a, b, c):
@@ -17,7 +18,10 @@ pi_sites = {'ThePiHut': 'https://thepihut.com/',
                          'Cool Components (UK)' : 'https://coolcomponents.co.uk/',
                          'PiShop (US)' : 'https://www.pishop.us/',
                          'Sparkfun': 'https://www.sparkfun.com/',
-                         'OKDO': 'https://www.odko.com/'}
+                         'OKDO': 'https://www.odko.com/',
+                         'Adafruit (Guest)': 'https://www.adafruit.com',
+                         'Ameridroid': 'https://ameridroid.com/',
+                         'Envistia': 'https://envistiamall.com/'}
 
 def get_shopify_url(name):
     return pi_sites[name]
@@ -84,8 +88,15 @@ class CreateDialog(QtWidgets.QDialog):
         self.proxies_box.addItem("None")
         self.proxies_box.setFont(font)
 
+        self.mode_box = QtWidgets.QComboBox(self.background)
+        self.mode_box.setGeometry(QtCore.QRect(450, 55, 151, 21))
+        self.mode_box.setStyleSheet(
+            "outline: 0;border: 1px solid #60a8ce;border-width: 0 0 2px;color: rgb(234, 239, 239);")
+        self.mode_box.addItems(['Noraml', 'Brute Force'])
+        self.mode_box.setFont(font)
+
         self.captcha_box = QtWidgets.QComboBox(self.background)
-        self.captcha_box.setGeometry(QtCore.QRect(50, 90, 151, 21))
+        self.captcha_box.setGeometry(QtCore.QRect(450, 20, 151, 21))
         self.captcha_box.setStyleSheet(
             "outline: 0;border: 1px solid #60a8ce;border-width: 0 0 2px;color: rgb(234, 239, 239);")
         self.captcha_box.addItems(['Manual Harvester', '2Captcha', 'CapMonster'])
@@ -120,21 +131,21 @@ class CreateDialog(QtWidgets.QDialog):
         self.link.setVisible(False)
 
         self.monitor_label = QtWidgets.QLabel(self.background)
-        self.monitor_label.setGeometry(QtCore.QRect(470, 54, 151, 21))
+        self.monitor_label.setGeometry(QtCore.QRect(500, 84, 151, 21))
         self.monitor_label.setScaledContents(True)
         self.monitor_label.setFont(font)
         self.monitor_label.setStyleSheet("color: rgb(212, 214, 214);border:  none;")
         self.monitor_label.setText('Monitor Delay')
 
         self.error_label = QtWidgets.QLabel(self.background)
-        self.error_label.setGeometry(QtCore.QRect(482, 84, 151, 21))
+        self.error_label.setGeometry(QtCore.QRect(512, 114, 151, 21))
         self.error_label.setScaledContents(True)
         self.error_label.setFont(font)
         self.error_label.setStyleSheet("color: rgb(212, 214, 214);border:  none;")
         self.error_label.setText('Error Delay')
 
         self.qty_label = QtWidgets.QLabel(self.background)
-        self.qty_label.setGeometry(QtCore.QRect(501, 24, 151, 21))
+        self.qty_label.setGeometry(QtCore.QRect(530, 55, 151, 21))
         self.qty_label.setScaledContents(True)
         self.qty_label.setFont(font)
         self.qty_label.setStyleSheet("color: rgb(212, 214, 214);border:  none;")
@@ -142,14 +153,14 @@ class CreateDialog(QtWidgets.QDialog):
         self.qty_label.setVisible(False)
 
         self.qty_spinbox = QtWidgets.QSpinBox(self.background)
-        self.qty_spinbox.setGeometry(QtCore.QRect(550, 25, 25, 21))
+        self.qty_spinbox.setGeometry(QtCore.QRect(585, 55, 25, 21))
         self.qty_spinbox.setStyleSheet("border: 1px solid #60a8ce;border-width: 0 0 2px;color: #FFFFFF;")
         self.qty_spinbox.setMinimum(1)
         self.qty_spinbox.setAttribute(QtCore.Qt.WA_MacShowFocusRect, 0)
         self.qty_spinbox.setVisible(False)
 
         self.monitor_edit = QtWidgets.QLineEdit(self.background)
-        self.monitor_edit.setGeometry(QtCore.QRect(550, 55, 25, 21))
+        self.monitor_edit.setGeometry(QtCore.QRect(585, 85, 25, 21))
         self.monitor_edit.setStyleSheet(
             "outline: 0;border: 1px solid #60a8ce;border-width: 0 0 2px;color: rgb(234, 239, 239);")
         self.monitor_edit.setAttribute(QtCore.Qt.WA_MacShowFocusRect, 0)
@@ -159,7 +170,7 @@ class CreateDialog(QtWidgets.QDialog):
         self.only_float = QtGui.QDoubleValidator()
         self.monitor_edit.setValidator(self.only_float)
         self.error_edit = QtWidgets.QLineEdit(self.background)
-        self.error_edit.setGeometry(QtCore.QRect(550, 85, 25, 21))
+        self.error_edit.setGeometry(QtCore.QRect(585, 115, 25, 21))
         self.error_edit.setStyleSheet(
             "outline: 0;border: 1px solid #60a8ce;border-width: 0 0 2px;color: rgb(234, 239, 239);")
         self.error_edit.setAttribute(QtCore.Qt.WA_MacShowFocusRect, 0)
@@ -193,10 +204,18 @@ class CreateDialog(QtWidgets.QDialog):
         self.shopify_select.setCurrentText(item_list[0])
         self.site_box.addItems(pi_site_list)
         self.site_box.setCurrentText(pi_site_list[0])
-
-
         self.site_box.activated.connect(self.on_site_click)
         QtCore.QMetaObject.connectSlotsByName(CreateDialog)
+
+        self.shopify_select.setVisible(False)
+        self.qty_spinbox.setVisible(True)
+        self.captcha_box.setVisible(False)
+        self.qty_label.setVisible(True)
+        self.account_user.setVisible(False)
+        self.account_pass.setVisible(False)
+        self.link.setVisible(True)
+        self.link.setPlaceholderText('Adafruit Link')
+        self.mode_box.setVisible(False)
 
     def load_data(self, task_tab):
         self.site_box.setCurrentText(task_tab.site)
@@ -205,7 +224,7 @@ class CreateDialog(QtWidgets.QDialog):
         self.info_edit.setVisible(False)
         self.qty_label.setVisible(True)
         self.qty_spinbox.setVisible(True)
-
+        self.mode_box.setVisible(False)
         if 'Sparkfun' in self.site_box.currentText():
             self.captcha_box.setVisible(False)
             self.account_user.setVisible(True)
@@ -222,6 +241,13 @@ class CreateDialog(QtWidgets.QDialog):
             self.link.setVisible(True)
             self.link.setText(task_tab.product)
             self.link.setPlaceholderText('Product Link')
+        elif 'Adafruit' in self.site_box.currentText():
+            self.captcha_box.setVisible(False)
+            self.account_user.setVisible(False)
+            self.account_pass.setVisible(False)
+            self.link.setVisible(True)
+            self.link.setText(task_tab.product)
+            self.link.setPlaceholderText('Adafruit Link')
         elif 'OKDO' in self.site_box.currentText():
             self.captcha_box.setVisible(False)
             self.account_user.setVisible(False)
@@ -232,8 +258,7 @@ class CreateDialog(QtWidgets.QDialog):
         else:
             self.shopify_select.setVisible(True)
             self.link.setVisible(False)
-            self.qty_label.setVisible(False)
-            self.qty_spinbox.setVisible(False)
+            self.captcha_box.setVisible(False)
             if self.site_box.currentText() == 'Chicago Dist.':
                 mode = chigaco_items
             elif self.site_box.currentText() == 'Vilros':
@@ -248,6 +273,10 @@ class CreateDialog(QtWidgets.QDialog):
                 mode = cool_items
             elif self.site_box.currentText() == 'pi3g (DE)':
                 mode = pi3g_items
+            elif self.site_box.currentText() == 'Ameridroid':
+                mode = ameri_items
+            elif self.site_box.currentText() == 'Envistia':
+                mode = envistia_items
             item_list = sorted(mode.keys(), key=str.lower)
             self.info_edit.setText(get_shopify_url(task_tab.site))
             self.shopify_select.addItems(item_list)
@@ -265,7 +294,7 @@ class CreateDialog(QtWidgets.QDialog):
         self.CreateDialog.setFixedSize(647, 160)
         self.account_user.setVisible(False)
         self.account_pass.setVisible(False)
-
+        self.mode_box.setVisible(False)
         if 'PiShop' in self.site_box.currentText():
             self.info_edit.setVisible(False)
             self.shopify_select.setVisible(False)
@@ -274,6 +303,14 @@ class CreateDialog(QtWidgets.QDialog):
             self.qty_label.setVisible(True)
             self.captcha_box.setVisible(True)
             self.link.setPlaceholderText('Product Link')
+        elif 'Adafruit' in self.site_box.currentText():
+            self.info_edit.setVisible(False)
+            self.shopify_select.setVisible(False)
+            self.link.setVisible(True)
+            self.qty_spinbox.setVisible(True)
+            self.qty_label.setVisible(True)
+            self.captcha_box.setVisible(False)
+            self.link.setPlaceholderText('Adafruit Link')
         elif 'Sparkfun' in self.site_box.currentText():
             self.info_edit.setVisible(False)
             self.shopify_select.setVisible(False)
@@ -297,9 +334,8 @@ class CreateDialog(QtWidgets.QDialog):
         else:
             self.shopify_select.setVisible(True)
             self.link.setVisible(False)
-            self.qty_spinbox.setVisible(False)
-            self.qty_label.setVisible(False)
             self.captcha_box.setVisible(False)
+            #self.mode_box.setVisible(True)
 
             if 'Chicago Dist.' == self.site_box.currentText():
                 item_list = sorted(chigaco_items.keys(), key=str.lower)
@@ -315,6 +351,10 @@ class CreateDialog(QtWidgets.QDialog):
                 item_list = sorted(pimoroni_items.keys(), key=str.lower)
             elif 'pi3g (DE)' == self.site_box.currentText():
                 item_list = sorted(pi3g_items.keys(), key=str.lower)
+            elif 'Ameridroid' == self.site_box.currentText():
+                item_list = sorted(ameri_items.keys(), key=str.lower)
+            elif 'Envistia' == self.site_box.currentText():
+                item_list = sorted(envistia_items.keys(), key=str.lower)
 
             self.shopify_select.addItems(item_list)
             self.shopify_select.setCurrentText(item_list[0])

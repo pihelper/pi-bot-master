@@ -1,3 +1,4 @@
+import json
 import logging
 import random
 import time
@@ -17,7 +18,7 @@ class Sparkfun:
         if self.proxy_list != False:
             self.update_random_proxy()
         self.settings = return_data("./data/settings.json")
-
+        self.product = self.product.split('[')[0].strip()
         self.image = ''
         self.status_signal.emit({"msg": "Starting", "status": "normal"})
         self.driver = ''
@@ -43,6 +44,14 @@ class Sparkfun:
         except:
             return '1'
 
+    def get_address_book(self, html):
+        sub = 'var address_book = '
+        ind = html.index(sub)
+        to_parse = html[ind + len(sub)::]
+        hey = to_parse.split(';')[0]
+        return json.loads(hey)
+
+
     def get_stock_proxy(self, pid):
         self.update_random_proxy()
         return self.session.get(f'https://www.sparkfun.com/products/{pid}.json').json()
@@ -54,16 +63,16 @@ class Sparkfun:
         return spli
 
     def get_braintree(self, html):
-        ind = '"braintree-device-data" value="'
-        ind = html.index(ind)
-        to_parse = html[ind + len(ind)::]
+        sub = '"braintree-device-data" value="'
+        ind = html.index(sub)
+        to_parse = html[ind + len(sub)::]
         hey = to_parse.split('}')[0] + "}"
         return hey.replace('&quot;', '"')
 
     def get_price(self, html):
-        ind = 'name="total_price" id="amount"'
-        ind = html.index(ind)
-        to_parse = html[ind + len(ind)::]
+        sub = 'name="total_price" id="amount"'
+        ind = html.index(sub)
+        to_parse = html[ind + len(sub)::]
         return to_parse.split('"')[1]
     def get_price_new(self,html):
         soup = BeautifulSoup(html, 'html.parser')
@@ -128,7 +137,7 @@ class Sparkfun:
         j = self.session.get('https://www.sparkfun.com/products/' + str(self.product) + ".json").json()
         self.name = j['name']
         self.image = j['images'][0]['600']
-        self.product_signal.emit(f'{self.name}')
+        self.product_signal.emit(f'{self.name} [{self.qty}]')
 
     def atc(self):
         self.status_signal.emit({"msg": "Clearing cart", "status": "normal"})
@@ -144,54 +153,62 @@ class Sparkfun:
                 if r['in_stock']:
                     self.status_signal.emit({"msg": "Carting item", "status": "normal"})
                     cart_add = {'id': self.product, 'qty': str(self.qty), 'csrf_token': token}
-                    for x in range(10):
-                        r = self.session.post('https://www.sparkfun.com/cart/add.json', data=cart_add)
-                        if r.json()['success']:
-                            self.status_signal.emit({"msg": "Carted!", "status": "carted"})
-                            has_carted = True
-                            if self.settings['webhookcart']:
-                                cart_web(f'https://www.sparkfun.com/products/{self.product}', self.image, 'Sparkfun', self.name,
-                                         self.profile['profile_name'])
-                            break
-                        elif 'cannot be backordered' in str(r.json()['message']):
-                            self.status_signal.emit({"msg": "OOS on cart", "status": "error"})
-                            break
-                        else:
-                            time.sleep(0.5)
-                    if has_carted:
+                    r = self.session.post('https://www.sparkfun.com/cart/add.json', data=cart_add)
+                    if r.json()['success']:
+                        self.status_signal.emit({"msg": "Carted!", "status": "carted"})
+                        if self.settings['webhookcart']:
+                            cart_web(f'https://www.sparkfun.com/products/{self.product}', self.image, 'Sparkfun', self.name,
+                                     self.profile['profile_name'])
                         break
+                    elif 'cannot be backordered' in str(r.json()['message']):
+                        self.status_signal.emit({"msg": "OOS on cart", "status": "error"})
+                        break
+                    else:
+                        time.sleep(0.5)
                 else:
                     self.status_signal.emit({"msg": "Waiting for restock", "status": "monitoring"})
                 time.sleep(float(self.monitor_delay))
             except Exception:
                 self.status_signal.emit({"msg": "Error on monitor", "status": "error"})
                 time.sleep(float(self.error_delay))
-            if has_carted:
-                break
 
     def go_to_shipping(self):
+        self.status_signal.emit({"msg": "Redirecting to shipping", "status": "normal"})
         self.current = time.time()
         r = self.session.get('https://www.sparkfun.com/cart/proceed')
         if 'cart' not in r.url:
-            self.status_signal.emit({"msg": "Redirected to shipping", "status": "normal"})
             self.token = self.get_checkout_token(r.text)
+            print(r.text)
+            self.address_book = self.get_address_book(r.text)
 
     def submit_shipping(self):
-        self.status_signal.emit({"msg": "Setting Address", "status": "normal"})
+        #self.status_signal.emit({"msg": "Validating Address", "status": "normal"})
         set_address_data = {'address[name]': f'{self.profile["shipping_fname"]} {self.profile["shipping_lname"]}',
-                'address[company]': '',
-                'address[country_id]': '223',
-                'address[street_address]': self.profile['shipping_a1'],
-                'address[street_address2]': self.profile['shipping_a2'],
-                'address[city]': self.profile['shipping_city'],
-                'address[zone_id]': self.get_shipping_zone(),
-                'address[state]': self.profile['shipping_state'],
-                'address[postcode]': self.profile['shipping_zipcode'],
-                'address[po_box]': 'false'}
-        self.session.post('https://www.sparkfun.com/orders/set_shipping_address',data=set_address_data)
-        self.status_signal.emit({"msg": "Getting Shipping Methods", "status": "normal"})
-        self.session.get('https://www.sparkfun.com/orders/shipping_quotes')
+                            'address[company]': '',
+                            'address[country_id]': '223',
+                            'address[street_address]': self.profile['shipping_a1'],
+                            'address[street_address2]': self.profile['shipping_a2'],
+                            'address[city]': self.profile['shipping_city'],
+                            'address[zone_id]': self.get_shipping_zone(),
+                            'address[state]': self.profile['shipping_state'],
+                            'address[postcode]': self.profile['shipping_zipcode'],
+                            'address[po_box]': 'false'}
+        #self.session.post('https://www.sparkfun.com/orders/validate_address', data=set_address_data)
+        #self.status_signal.emit({"msg": "Setting Address", "status": "normal"})
+        #self.session.post('https://www.sparkfun.com/orders/set_shipping_address',data=set_address_data)
+        self.status_signal.emit({"msg": "Posting Shipping Methods", "status": "normal"})
+        quote_post = {'name': 'shipping_method', 'id': 'shipping_methods'}
+        quote_get = self.session.post('https://www.sparkfun.com/orders/shipping_quotes', data=quote_post)
+        quote_rate = "6" if 'FREE' in quote_get.text else "116"
         self.shipping_zone = self.get_shipping_zone()
+
+        first_address = list(self.address_book.keys())[0]
+        new_data = {'csrf_token': self.token,
+                'shipping_methods[1][ship_immediately]': quote_rate,
+                'shipping_address[address_select_dropdown]' : first_address}
+
+        for value in self.address_book[first_address]:
+            new_data[f'shipping_address[entry_{value}]'] = self.address_book[first_address][value]
 
         data = {'csrf_token': self.token,
                 'shipping_address[entry_name]': f'{self.profile["shipping_fname"]} {self.profile["shipping_lname"]}',
@@ -202,13 +219,34 @@ class Sparkfun:
                 'shipping_address[entry_city]': self.profile['billing_city'],
                 'shipping_address[entry_zone]': self.shipping_zone,
                 'shipping_address[entry_postcode]': self.profile['billing_zipcode'],
-                'shipping_methods[1][ship_immediately]': '116'}
+                'shipping_methods[1][ship_immediately]': quote_rate}
 
-        self.status_signal.emit({"msg": "Submitting shipping", "status": "normal"})
-        submit = self.session.post('https://www.sparkfun.com/orders/shipping_update',data=data)
-        self.price = self.get_price_new(submit.content)
+        self.status_signal.emit({"msg": "Submitting from address book", "status": "normal"})
+        submit = self.session.post('https://www.sparkfun.com/orders/shipping_update', data=new_data)
+
+        print(submit.url)
+        print(submit.text)
+
         if 'billing' in submit.url:
+            self.price = self.get_price_new(submit.content)
             self.status_signal.emit({"msg": "Redirected to billing", "status": "normal"})
+        elif 'Please fix the errors below' in submit.text:
+            self.status_signal.emit({"msg": "Error submitting shipping (OOS)", "status": "error"})
+            if self.settings['webhookfailed']:
+                failed_spark_web(f'https://www.sparkfun.com/products/{str(self.product)}', self.image,
+                                 'Sparkfun',
+                                 self.name, self.profile["profile_name"])
+            self.atc()
+            self.go_to_shipping()
+            self.submit_shipping()
+            return
+        else:
+            self.status_signal.emit({"msg": "Error submitting shipping (Other)", "status": "error"})
+            if self.settings['webhookfailed']:
+                failed_spark_web(f'https://www.sparkfun.com/products/{str(self.product)}', self.image,
+                                 'Sparkfun',
+                                 self.name, self.profile["profile_name"])
+            return
 
     def submit_order_fast(self):
         billing_form = {'csrf_token': self.token,
@@ -253,6 +291,7 @@ class Sparkfun:
                 send_notif(self.name, 'fail')
 
     def get_shipping_method(self, text):
+
         method_text = text.replace('\\n', '\n')
         methods = []
         for link in method_text.splitlines():

@@ -1,17 +1,17 @@
 chigaco_items = {
     'Raspberry Pi Zero 2 W Starter Kit': 'collections/raspberry-pi/products.json?limit=250|raspberry-pi-zero-2-w-starter-kit|default',
-    'Raspberry Pi 4 Model B - 1GB RAM': 'collections/raspberry-pi/products.json?limit=250&page=2|raspberry-pi-4-model-b-1gb|default',
-    'Raspberry Pi 4 Model B - 2GB RAM': 'collections/raspberry-pi/products.json?limit=250&page=2|raspberry-pi-4-model-b-2gb|default',
-    'Raspberry Pi 4 Model B - 4GB RAM': 'collections/raspberry-pi/products.json?limit=250&page=2|raspberry-pi-4-model-b-4gb|default',
-    'Raspberry Pi 4 Model B - 8GB RAM': 'collections/raspberry-pi/products.json?limit=250&page=2|raspberry-pi-4-model-b-8gb|default',
-    'Raspberry Pi Zero 2 W': 'collections/raspberry-pi/products.json?limit=250&page=2|raspberry-pi-zero-2|default'}
+    'Raspberry Pi 4 - 1GB RAM': 'collections/raspberry-pi/products.json?limit=250&page=2|raspberry-pi-4-model-b-1gb|default',
+    'Raspberry Pi 4 - 2GB RAM': 'collections/raspberry-pi/products.json?limit=250&page=2|raspberry-pi-4-model-b-2gb|default',
+    'Raspberry Pi 4 - 4GB RAM': 'collections/raspberry-pi/products.json?limit=250&page=2|raspberry-pi-4-model-b-4gb|default',
+    'Raspberry Pi 4 - 8GB RAM': 'collections/raspberry-pi/products.json?limit=250&page=2|raspberry-pi-4-model-b-8gb|default',
+    'Raspberry Pi Zero 2 W': 'collections/raspberry-pi/products.json?limit=250&page=2|raspberry-pi-zero-2|default',
+    'Test Item': 'products.json?limit=250|raspberry-pi-pico-h|default',
+}
 
-vilros_items = {'Raspberry Pi 4 Model B -  4GB RAM': 'collections/raspberry-pi-boards/products.json?limit=250|raspberry-pi-4-4gb-ram|default',
-'Raspberry Pi 4 Model B -  2GB RAM': 'collections/raspberry-pi-boards/products.json?limit=250|raspberry-pi-4-2gb-ram|default',
-'Raspberry Pi 4 Model B -  1GB RAM': 'collections/raspberry-pi-boards/products.json?limit=250|raspberry-pi-4-model-b|default',
-'Raspberry Pi Zero W with Header': 'collections/raspberry-pi-boards/products.json?limit=250|raspberry-pi-zero-wh|default',
-'Raspberry Pi Zero W': 'collections/raspberry-pi-boards/products.json?limit=250|raspberry-pi-zero-w|default',
-'Raspberry Pi 4 Model B -  8GB RAM': 'collections/raspberry-pi-boards/products.json?limit=250|raspberry-pi-4-model-b-8gb-ram|default',
+vilros_items = {'Raspberry Pi 4 - 4GB RAM': 'collections/raspberry-pi-boards/products.json?limit=250|raspberry-pi-4-4gb-ram|default',
+'Raspberry Pi 4 - 2GB RAM': 'collections/raspberry-pi-boards/products.json?limit=250|raspberry-pi-4-2gb-ram|default',
+'Raspberry Pi 4 - 1GB RAM': 'collections/raspberry-pi-boards/products.json?limit=250|raspberry-pi-4-model-b|default',
+'Raspberry Pi 4 - 8GB RAM': 'collections/raspberry-pi-boards/products.json?limit=250|raspberry-pi-4-model-b-8gb-ram|default',
 'Raspberry Pi Zero 2 W': 'collections/raspberry-pi-boards/products.json?limit=250|raspberry-pi-zero-2-w|default',
 'Raspberry Pi CM4 - 2GB RAM / Wireless / lite': 'collections/compute-module/products.json?limit=250|raspberry-pi-compute-module-4-2gb-ram|Wireless / lite',
 'Raspberry Pi CM4 - 2GB RAM / Wireless / 8GB': 'collections/compute-module/products.json?limit=250|raspberry-pi-compute-module-4-2gb-ram|Wireless / 8GB',
@@ -46,27 +46,28 @@ vilros_items = {'Raspberry Pi 4 Model B -  4GB RAM': 'collections/raspberry-pi-b
 'Raspberry Pi CM4 - 8GB RAM / Non Wireless / 16GB': 'collections/compute-module/products.json?limit=250|raspberry-pi-compute-module-4-8gb-ram|Non Wireless / 16GB',
 'Raspberry Pi CM4 - 8GB RAM / Non Wireless / 32GB': 'collections/compute-module/products.json?limit=250|raspberry-pi-compute-module-4-8gb-ram|Non Wireless / 32GB'}
 
-cool_items = {'Raspberry Pi 4 / 1GB': 'collections/raspberry-pi-boards/products.json?limit=250|raspberry-pi-4|1GB',
-'Raspberry Pi 4 / 2GB': 'collections/raspberry-pi-boards/products.json?limit=250|raspberry-pi-4|2GB',
-'Raspberry Pi 4 / 4GB': 'collections/raspberry-pi-boards/products.json?limit=250|raspberry-pi-4|4GB',
-'Raspberry Pi 4 / 8GB': 'collections/raspberry-pi-boards/products.json?limit=250|raspberry-pi-4|8GB',
+cool_items = {'Raspberry Pi 4 - 1GB RAM': 'collections/raspberry-pi-boards/products.json?limit=250|raspberry-pi-4|1GB',
+'Raspberry Pi 4 - 2GB RAM': 'collections/raspberry-pi-boards/products.json?limit=250|raspberry-pi-4|2GB',
+'Raspberry Pi 4 - 4GB RAM': 'collections/raspberry-pi-boards/products.json?limit=250|raspberry-pi-4|4GB',
+'Raspberry Pi 4 - 8GB RAM': 'collections/raspberry-pi-boards/products.json?limit=250|raspberry-pi-4|8GB',
 'Raspberry Pi Zero 2 W': 'collections/raspberry-pi-boards/products.json?limit=250|raspberry-pi-zero-2-w|default',
 'Raspberry Pi 3 Model A+': 'collections/raspberry-pi-boards/products.json?limit=250|raspberry-pi-3-model-a|default',
-'Raspberry Pi 3 Model B+': 'collections/raspberry-pi-boards/products.json?limit=250|raspberry-pi-3-model-b-1|default'
+'Raspberry Pi 3 Model B+': 'collections/raspberry-pi-boards/products.json?limit=250|raspberry-pi-3-model-b-1|default',
+'Teensy 4.0': 'collections/teensy/products.json?limit=250|teensy-4-0-usb-development-board|Without Pins'
 }
 
-sbc_items = {'Raspberry Pi 4 Model B - 1 GB': 'collections/raspberry-pi-boards/products.json?limit=250|raspberry-pi-4-model-b|1 GB',
-'Raspberry Pi 4 Model B - 2 GB': 'collections/raspberry-pi-boards/products.json?limit=250|raspberry-pi-4-model-b|2 GB',
-'Raspberry Pi 4 Model B - 4 GB': 'collections/raspberry-pi-boards/products.json?limit=250|raspberry-pi-4-model-b|4 GB',
-'Raspberry Pi 4 Model B - 8 GB': 'collections/raspberry-pi-boards/products.json?limit=250|raspberry-pi-4-model-b|8 GB'}
+sbc_items = {'Raspberry Pi 4 - 1 GB RAM': 'collections/raspberry-pi-boards/products.json?limit=250|raspberry-pi-4-model-b|1 GB',
+'Raspberry Pi 4 - 2 GB RAM': 'collections/raspberry-pi-boards/products.json?limit=250|raspberry-pi-4-model-b|2 GB',
+'Raspberry Pi 4 - 4 GB RAM': 'collections/raspberry-pi-boards/products.json?limit=250|raspberry-pi-4-model-b|4 GB',
+'Raspberry Pi 4 - 8 GB RAM': 'collections/raspberry-pi-boards/products.json?limit=250|raspberry-pi-4-model-b|8 GB'}
 
 pihut_items = {'Raspberry Pi 3 Model B': 'collections/raspberry-pi/products.json?limit=250|raspberry-pi-3-model-b|default',
-               'Raspberry Pi Zero 2 W / Zero 2 W': 'collections/raspberry-pi/products.json?limit=250|raspberry-pi-zero-2|Zero 2 W',
-               'Raspberry Pi Zero 2 W / Zero 2 W (with colour-coded header)': 'collections/raspberry-pi/products.json?limit=250|raspberry-pi-zero-2|Zero 2 W (with colour-coded header)',
-               'Raspberry Pi 4 Model B / 1GB': 'collections/raspberry-pi/products.json?limit=250|raspberry-pi-4-model-b|1GB',
-               'Raspberry Pi 4 Model B / 2GB': 'collections/raspberry-pi/products.json?limit=250|raspberry-pi-4-model-b|2GB',
-               'Raspberry Pi 4 Model B / 4GB': 'collections/raspberry-pi/products.json?limit=250|raspberry-pi-4-model-b|4GB',
-               'Raspberry Pi 4 Model B / 8GB': 'collections/raspberry-pi/products.json?limit=250|raspberry-pi-4-model-b|8GB',
+               'Raspberry Pi Zero 2 W': 'collections/raspberry-pi/products.json?limit=250|raspberry-pi-zero-2|Zero 2 W',
+               'Raspberry Pi Zero 2 W (with colour-coded header)': 'collections/raspberry-pi/products.json?limit=250|raspberry-pi-zero-2|Zero 2 W (with colour-coded header)',
+               'Raspberry Pi 4 - 1GB': 'collections/raspberry-pi/products.json?limit=250|raspberry-pi-4-model-b|1GB',
+               'Raspberry Pi 4 - 2GB': 'collections/raspberry-pi/products.json?limit=250|raspberry-pi-4-model-b|2GB',
+               'Raspberry Pi 4 - 4GB': 'collections/raspberry-pi/products.json?limit=250|raspberry-pi-4-model-b|4GB',
+               'Raspberry Pi 4 - 8GB': 'collections/raspberry-pi/products.json?limit=250|raspberry-pi-4-model-b|8GB',
                'Raspberry Pi 3 Model B+': 'collections/raspberry-pi/products.json?limit=250|raspberry-pi-3-model-b-plus|default',
                'Raspberry Pi 3 Model A+': 'collections/raspberry-pi/products.json?limit=250|raspberry-pi-3-model-a-plus|default',
                'Raspberry Pi CM4 / Lite / 1GB / Wireless': 'collections/raspberry-pi/products.json?limit=250|raspberry-pi-compute-module-4|Lite / 1GB / Wireless',
@@ -101,23 +102,30 @@ pihut_items = {'Raspberry Pi 3 Model B': 'collections/raspberry-pi/products.json
                'Raspberry Pi CM4 / 32GB / 4GB / No Wireless': 'collections/raspberry-pi/products.json?limit=250|raspberry-pi-compute-module-4|32GB / 4GB / No Wireless',
                'Raspberry Pi CM4 / 32GB / 8GB / Wireless': 'collections/raspberry-pi/products.json?limit=250|raspberry-pi-compute-module-4|32GB / 8GB / Wireless',
                'Raspberry Pi CM4 / 32GB / 8GB / No Wireless': 'collections/raspberry-pi/products.json?limit=250|raspberry-pi-compute-module-4|32GB / 8GB / No Wireless',
-               'Google Coral USB Accelerator': 'collections/google/products.json?limit=250|coral-usb-accelerator|default'
+               'Google Coral USB Accelerator': 'collections/google/products.json?limit=250|coral-usb-accelerator|default',
+               'Teensy 4.0': 'collections/adafruit-development-boards/products.json?limit=250|pjrc-teensy-4-0-usb-development-board|default',
+               'Test Item (Pico)': 'collections/pico/products.json|raspberry-pi-pico-w|w'
 }
 
-pimoroni_items = {'Raspberry Pi 4 Model B / 1GB RAM': 'collections/single-board-computers/products.json?limit=250|raspberry-pi-4|1GB RAM',
-'Raspberry Pi 4 Model B / 2GB RAM': 'collections/single-board-computers/products.json?limit=250|raspberry-pi-4|2GB RAM',
-'Raspberry Pi 4 Model B / 4GB RAM': 'collections/single-board-computers/products.json?limit=250|raspberry-pi-4|4GB RAM',
-'Raspberry Pi 4 Model B / 8GB RAM': 'collections/single-board-computers/products.json?limit=250|raspberry-pi-4|8GB RAM',
-'Raspberry Pi 3 B+': 'collections/single-board-computers/products.json?limit=250|raspberry-pi-3-b-plus|default',
-'Raspberry Pi Zero 2 W / Pi Zero 2 W': 'collections/single-board-computers/products.json?limit=250|raspberry-pi-zero-2-w|Pi Zero 2 W',
-'Raspberry Pi Zero 2 W / Pi Zero 2 W + 32GB microSD Card': 'collections/single-board-computers/products.json?limit=250|raspberry-pi-zero-2-w|Pi Zero 2 W + 32GB microSD Card',
+ameri_items = {'Teensy 4.0': 'collections/teensy/products.json|teensy-4-0|default'}
+envistia_items = {'Teensy 4.0': 'products.json|pjrc-teensy-4-0-imxrt1062-microcontroller-development-board|standard'}
+
+pimoroni_items = {'Raspberry Pi 4 - 1GB RAM': 'collections/single-board-computers/products.json?limit=250|raspberry-pi-4|1GB RAM|true',
+'Raspberry Pi 4 - 2GB RAM': 'collections/single-board-computers/products.json?limit=250|raspberry-pi-4|2GB RAM|true',
+'Raspberry Pi 4 - 4GB RAM': 'collections/single-board-computers/products.json?limit=250|raspberry-pi-4|4GB RAM|true',
+'Raspberry Pi 4 - 8GB RAM': 'collections/single-board-computers/products.json?limit=250|raspberry-pi-4|8GB RAM|true',
+'Raspberry Pi 3 B+': 'collections/single-board-computers/products.json?limit=250|raspberry-pi-3-b-plus|default|true',
+'Raspberry Pi Zero 2 W': 'collections/single-board-computers/products.json?limit=250|raspberry-pi-zero-2-w|Pi Zero 2 W',
+'Raspberry Pi Zero 2 W + 32GB microSD Card': 'collections/single-board-computers/products.json?limit=250|raspberry-pi-zero-2-w|Pi Zero 2 W + 32GB microSD Card',
+'Raspberry Pi Zero 2 W Essentials Kit': 'collections/raspberry-pi/products.json?limit=250|raspberry-pi-zero-2-w-essentials-kit|default',
 'Raspberry Pi 3 A+': 'collections/single-board-computers/products.json?limit=250|raspberry-pi-3-a-plus|default',
 'Raspberry Pi CM4 / Wireless / 4GB RAM / Lite': 'collections/single-board-computers/products.json?limit=250|raspberry-pi-compute-module-4|Wireless / 4GB RAM / Lite',
 'Raspberry Pi CM4 / Wireless / 4GB RAM / 32GB Flash': 'collections/single-board-computers/products.json?limit=250|raspberry-pi-compute-module-4|Wireless / 4GB RAM / 32GB Flash',
 'Raspberry Pi CM4 / No Wireless / 1GB RAM / Lite': 'collections/single-board-computers/products.json?limit=250|raspberry-pi-compute-module-4|No Wireless / 1GB RAM / Lite',
 'Raspberry Pi CM4 / No Wireless / 1GB RAM / 32GB Flash': 'collections/single-board-computers/products.json?limit=250|raspberry-pi-compute-module-4|No Wireless / 1GB RAM / 32GB Flash',
-'NVIDIA® Jetson Nano™ Developer Kit - B01': 'collections/single-board-computers/products.json?limit=250|nvidia-jetson-nano-developer-kit-b01|default',
-'NVIDIA Jetson Nano 2GB Developer Kit': 'collections/single-board-computers/products.json?limit=250|nvidia-jetson-nano-2gb-developer-kit|default'
+'NVIDIA Jetson Nano™ Developer Kit - B01': 'collections/single-board-computers/products.json?limit=250|nvidia-jetson-nano-developer-kit-b01|default',
+'NVIDIA Jetson Nano 2GB Developer Kit': 'collections/single-board-computers/products.json?limit=250|nvidia-jetson-nano-2gb-developer-kit|default',
+'Teensy 4.0': 'collections/teensy/products.json?limit=250|teensy-4-0-development-board|default'
 }
 
 pi3g_items = {'Google Coral USB Accelerator': 'collections/google-aiy-coral/products.json|google-coral-usb-accelerator|nur'}

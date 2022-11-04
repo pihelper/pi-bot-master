@@ -56,7 +56,6 @@ class Okdo:
         self.image = ''
         self.pid = ''
         self.title = ''
-
         self.main_site = self.info
         self.status_signal.emit({"msg": "Starting", "status": "normal"})
         self.country = utils.get_country_code(profile['shipping_country'])
@@ -88,12 +87,11 @@ class Okdo:
                     # If PID isn't stored, obtain from page
                     if self.pid == '':
                         self.pid = get_pid_new(get_item_page.content)
-                        print(self.pid)
                     # If item name isn't stored, obtain from page and change product on task to name of item
                     if self.title == '':
                         self.title = check_name(data_json)
                         prod_id = 'UK' if self.site_prefix == '' else str(self.site_prefix).upper()[1:]
-                        self.product_signal.emit(f'{self.title} [{prod_id}]')
+                        self.product_signal.emit(f'{self.title} [{prod_id}] [{self.qty}]')
                     # If item image isn't stored, obtain from page
                     if self.image == '':
                         self.image = check_image(data_json)

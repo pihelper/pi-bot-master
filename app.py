@@ -10,7 +10,8 @@ from pages.proxiespage import ProxiesPage
 from pages.settingspage import SettingsPage
 import images.images, sys, os
 from sites.site_keys import chigaco_items, get_item_info, vilros_items, pihut_items, sbc_items, pimoroni_items, \
-    cool_items, pi3g_items
+    cool_items, pi3g_items, ameri_items, envistia_items
+
 
 def no_abort(a, b, c):
     sys.__excepthook__(a, b, c)
@@ -21,7 +22,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setupUi(self)
         self.show()
     def setupUi(self, MainWindow):
-        self.version ='1.05'
+        self.version ='1.06'
         MainWindow.setFixedSize(1109, 600)
         MainWindow.setStyleSheet("background-color: #1E1E1E;")
         MainWindow.setWindowTitle(f"Pi Bot - Version {self.version}")
@@ -139,7 +140,7 @@ class MainWindow(QtWidgets.QMainWindow):
     
     def create_task(self):
         site = self.createdialog.site_box.currentText()
-
+        mode = ''
         if 'PiShop' in site:
             product = self.createdialog.link.text()
             size = ''
@@ -152,24 +153,34 @@ class MainWindow(QtWidgets.QMainWindow):
             product = self.createdialog.link.text()
             size = ''
             info = self.createdialog.link.text()
+        elif 'Adafruit' in site:
+            product = self.createdialog.link.text()
+            size = ''
+            info = self.createdialog.link.text()
         else:
+
             if site == 'Chicago Dist.':
-                mode = chigaco_items
+                dict = chigaco_items
             elif site == 'Vilros':
-                mode = vilros_items
+                dict = vilros_items
             elif site == 'ThePiHut':
-                mode = pihut_items
+                dict = pihut_items
             elif site == 'SBComponents (UK)':
-                mode = sbc_items
+                dict = sbc_items
             elif site == 'Pimoroni (UK)':
-                mode = pimoroni_items
+                dict = pimoroni_items
             elif site == 'Cool Components (UK)':
-                mode = cool_items
+                dict = cool_items
             elif site == 'pi3g (DE)':
-                mode = pi3g_items
+                dict = pi3g_items
+            elif site == 'Ameridroid':
+                dict = ameri_items
+            elif site == 'Envistia':
+                dict = envistia_items
             product = self.createdialog.shopify_select.currentText()
-            size = get_item_info(mode,self.createdialog.shopify_select.currentText())
+            size = get_item_info(dict,self.createdialog.shopify_select.currentText())
             info = get_shopify_url(site)
+            mode = self.createdialog.mode_box.currentText()
         captcha_type = self.createdialog.captcha_box.currentText()
         profile = self.createdialog.profile_box.currentText()
         proxies = self.createdialog.proxies_box.currentText()
@@ -186,6 +197,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     size,
                     profile,
                     proxies,
+                    mode,
                     monitor_delay,
                     error_delay,
                     captcha_type,

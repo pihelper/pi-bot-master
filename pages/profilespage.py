@@ -330,13 +330,24 @@ class ProfilesPage(QtWidgets.QWidget):
             self.billing_address2_edit.setText(p["billing_a2"])
             self.billing_city_edit.setText(p["billing_city"])
             self.billing_zipcode_edit.setText(p["billing_zipcode"])
-            self.billing_state_box.setCurrentIndex(self.billing_state_box.findText(p["billing_state"]))
+            if p["shipping_state"] != '':
+                self.fill_shipping_states()
+                self.billing_state_box.setVisible(True)
+                self.shipping_state_box.setVisible(True)
+                self.shipping_state_box.setCurrentIndex(self.shipping_state_box.findText(p["shipping_state"]))
+                self.billing_state_box.setCurrentIndex(self.billing_state_box.findText(p["shipping_state"]))
+            else:
+                self.billing_state_box.setVisible(False)
+                self.shipping_state_box.setVisible(False)
+                self.shipping_state_box.clear()
+                self.billing_state_box.clear()
             self.billing_country_box.setCurrentIndex(self.billing_country_box.findText(p["billing_country"]))
             self.cardnumber_edit.setText(p["card_number"])
             self.cardmonth_box.setCurrentIndex(self.cardmonth_box.findText(p["card_month"]))
             self.cardyear_box.setCurrentIndex(self.cardyear_box.findText(p["card_year"]))
             self.cardtype_box.setCurrentIndex(self.cardtype_box.findText(p["card_type"]))
             self.cardcvv_edit.setText(p["card_cvv"])
+
         return
     def save_profile(self):
         profile_name = self.profilename_edit.text()
@@ -428,15 +439,17 @@ class ProfilesPage(QtWidgets.QWidget):
 
     def fill_shipping_states(self):
         self.shipping_state_box.clear()
+        self.billing_state_box.clear()
         self.shipping_state_box.setVisible(False)
         for country in self.country_json:
             if self.shipping_country_box.currentText() == country['name']:
                 if len(country['provinces']) != 0:
                     for province in country['provinces']:
                         self.shipping_state_box.addItem(province['code'])
+                        self.billing_state_box.addItem(province['code'])
                     self.shipping_state_box.setVisible(True)
+                    self.billing_state_box.setVisible(True)
     def fill_billing_states(self):
-        self.billing_state_box.clear()
         self.billing_state_box.setVisible(False)
         for country in self.country_json:
             if self.billing_country_box.currentText() == country['name']:

@@ -13,8 +13,8 @@ from webhook import good_web, failed_web, cart_web
 
 
 class Shop:
-    def __init__(self, task_id, status_signal, product_signal, product, info, size, profile, proxy, monitor_delay, error_delay):
-        self.task_id, self.status_signal, self.product_signal, self.product, self.info, self.size, self.profile, self.monitor_delay, self.error_delay = task_id, status_signal, product_signal, product, info, size, profile,monitor_delay, error_delay
+    def __init__(self, task_id, status_signal, product_signal, product, info, size, profile, proxy, monitor_delay, error_delay, qty):
+        self.task_id, self.status_signal, self.product_signal, self.product, self.info, self.size, self.profile, self.monitor_delay, self.error_delay, self.qty = task_id, status_signal, product_signal, product, info, size, profile,monitor_delay, error_delay, qty
         self.session = requests.Session()
         self.settings = return_data("./data/settings.json")
         self.proxy_list = proxy
@@ -29,11 +29,9 @@ class Shop:
         self.image = ''
         self.main_site = self.info
         self.status_signal.emit({"msg": "Starting", "status": "normal"})
-        self.proxy_to_use = self.update_random_proxy()
 
         needs_chrome = False
-
-        if 'pimoroni' in self.main_site:
+        if 'pimoroni' in self.main_site and len(self.size.split('|')) == 4:
             if exists('./chromedriver.exe'):
                 self.get_session()
             else:
@@ -204,7 +202,7 @@ class Shop:
                 elif variant != '':
                     # Once the variant variable isn't empty, we now add to cart.
                     # Below is the data sent on carting
-                    cart = {'utf8': '✓', 'form_type': 'product', 'id': variant, 'quantity': '1'}
+                    cart = {'utf8': '✓', 'form_type': 'product', 'id': variant, 'quantity': self.qty}
                     self.status_signal.emit({"msg": "Adding to cart", "status": "normal"})
                     url_to_post = f'{self.main_site}cart/add.js'
                     # We send the cart data to the cart url
@@ -224,6 +222,7 @@ class Shop:
                         # This checks for the checkout page to be loaded. We can now proceed to checking out.
                         self.status_signal.emit({"msg": "Added to Cart", "status": "carted"})
                         # If you have the webhook cart enabled, it sends a webhook to alert you have carted.
+                        self.start = time.time()
                         if self.settings['webhookcart']:
                             cart_web(self.main_site, self.image, self.main_site, self.product, self.profile['profile_name'])
                         return req
@@ -508,11 +507,12 @@ class Shop:
                 else:
                     # Processing is done. Exit poll loop
                     break
+            checkout_time = time.time() - self.start
             if '&validate=true' in after.url:
                 # This means the checkout was unsuccessful.
                 price_to_use = int(self.price)/100
                 self.status_signal.emit({"msg": "Checkout Failed", "status": "error"})
-                failed_web(after.url,self.image,f'{self.main_site}',self.product,self.profile["profile_name"], "{:.2f}".format(price_to_use))
+                failed_web(after.url,self.image,f'{self.main_site}',self.product,self.profile["profile_name"], "{:.2f}".format(price_to_use),checkout_time)
 
             elif 'thank_you' in after.url:
                 # This means the checkout was successful.
@@ -520,7 +520,7 @@ class Shop:
                 self.status_signal.emit({"msg": "Successful Checkout", "status": "success"})
                 good_web(after.url, self.image, f'{self.main_site}',
                        self.product, self.profile["profile_name"],
-                       "{:.2f}".format(price_to_use))
+                       "{:.2f}".format(price_to_use),checkout_time)
 
             else:
                 # Sometimes there can be weird URLs after submitting order.
@@ -541,19 +541,19 @@ class Shop:
                     if self.settings['webhooksuccess']:
                         good_web(r.url, self.image, f'{self.main_site}',
                                  self.product, self.profile["profile_name"],
-                                 "{:.2f}".format(price_to_use))
+                                 "{:.2f}".format(price_to_use), checkout_time)
                 else:
                     # Checkout failed.
                     self.status_signal.emit({"msg": "Checkout Failed", "status": "error"})
                     if self.settings['webhookfail']:
                         failed_web(r.url, self.image, f'{self.main_site}', self.product,
-                                   self.profile["profile_name"], "{:.2f}".format(price_to_use))
+                                   self.profile["profile_name"], "{:.2f}".format(price_to_use), checkout_time)
 
         else:
             # Other error checking out
             price_to_use = int(self.price) / 100
             failed_web(submit.url, self.image, f'{self.main_site}', self.product,
-                       self.profile["profile_name"], "{:.2f}".format(price_to_use))
+                       self.profile["profile_name"], "{:.2f}".format(price_to_use), 'N/A')
 
     # These are the headers used during the whole process, with a field to change the referer URL.
     def request_headers(self, url):
