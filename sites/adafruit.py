@@ -34,6 +34,21 @@ class Adafruit:
             self.cart()
             self.checkout()
 
+    def get_headers(self):
+        headers = {'authority': 'www.adafruit.com',
+                   'scheme': 'https',
+                   'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
+                   'sec-ch-ua': '"Chromium";v="106", "Google Chrome";v="106", "Not;A=Brand";v="99"',
+                   'sec-ch-ua-mobile': '?0',
+                   'sec-ch-ua-platform': '"Windows"',
+                   'sec-fetch-dest': 'document',
+                   'sec-fetch-site': 'none',
+                   'sec-fetch-user': '?1',
+                   'upgrade-insecure-requests': '1',
+                   'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36'}
+
+        return headers
+
     def get_checkout_token(self, html):
         ind = html.index("csrf_token")
         sub = str(html[ind:])
@@ -43,7 +58,7 @@ class Adafruit:
     def monitor(self):
         while True:
             self.status_signal.emit({"msg": "Checking stock", "status": "checking"})
-            page_get = self.session.get(str(self.product))
+            page_get = self.session.get(str(self.product), headers=self.get_headers())
             if page_get.status_code == 200:
                 soup = BeautifulSoup(page_get.content, 'html.parser')
                 if self.item == '':
@@ -76,7 +91,7 @@ class Adafruit:
                      'source_page': 'product',
                      'source_id': self.pid}
 
-        cart_add = self.session.post(cart_url, data=cart_form)
+        cart_add = self.session.post(cart_url, data=cart_form, headers=self.get_headers())
         if cart_add.status_code == 200:
             soup = BeautifulSoup(cart_add.content, 'html.parser')
             if 'Added to Adafruit' in soup.find('title').string:
@@ -85,7 +100,7 @@ class Adafruit:
                     cart_web(self.product, self.image, 'Adafruit (Guest)', self.item,
                              self.profile['profile_name'])
                 self.status_signal.emit({"msg": "Redirecting to checkout", "status": "normal"})
-                checkout_get = self.session.get('https://www.adafruit.com/checkout')
+                checkout_get = self.session.get('https://www.adafruit.com/checkout', headers=self.get_headers())
                 if 'step=' in checkout_get.url:
                     soup = BeautifulSoup(checkout_get.content, 'html.parser')
                     self.csrf = soup.find('input', {'name': 'csrf_token'}).get('value')
@@ -99,7 +114,7 @@ class Adafruit:
                        'checkout_guest': 1,
                        'action': 'save_one'}
 
-        step_1_post = self.session.post(checkout_url, data=step_1_form)
+        step_1_post = self.session.post(checkout_url, data=step_1_form, headers=self.get_headers())
 
         if 'permanently disabled certain email addresses' in step_1_post.text:
             self.status_signal.emit({"msg": "Email Banned", "status": "error"})
@@ -119,7 +134,7 @@ class Adafruit:
                            'delivery_phone': profile['shipping_phone'],
                            'action': 'save_two'}
 
-            step_2_post = self.session.post(checkout_url, data=step_2_form)
+            step_2_post = self.session.post(checkout_url, data=step_2_form, headers=self.get_headers())
             if 'permanently disabled certain shipping' in step_2_post.text:
                 self.status_signal.emit({"msg": "Address Banned", "status": "error"})
                 return
@@ -130,7 +145,7 @@ class Adafruit:
                 step_3_form = {'csrf_token': self.csrf,
                                'shipping': shipping_method,
                                'action': 'save_three'}
-                step_3_post = self.session.post(checkout_url, data=step_3_form)
+                step_3_post = self.session.post(checkout_url, data=step_3_form, headers=self.get_headers())
 
                 if 'step=4' in step_3_post.url:
                     self.status_signal.emit({"msg": "Submitting payment", "status": "normal"})
@@ -144,7 +159,7 @@ class Adafruit:
                                    'authorizenet_aim_cc_cvv': profile['card_cvv'],
                                    'card-type': 'amex',
                                    'po_payment_type': 'replacement'}
-                    step_4_post = self.session.post(checkout_url, data=step_4_form)
+                    step_4_post = self.session.post(checkout_url, data=step_4_form, headers=self.get_headers())
 
                     if step_4_post.url == 'https://www.adafruit.com/checkout':
                         self.status_signal.emit({"msg": "Submitting order", "status": "alt"})
@@ -155,7 +170,7 @@ class Adafruit:
                         for value in values:
                             final_checkout_form[value] = soup.find('input', {'name': value}).get('value')
 
-                        final_post = self.session.post('https://www.adafruit.com/index.php?main_page=checkout_process', data=final_checkout_form)
+                        final_post = self.session.post('https://www.adafruit.com/index.php?main_page=checkout_process', data=final_checkout_form, headers=self.get_headers())
 
                         if 'Your credit card could not be authorized' in final_post.text:
                             self.status_signal.emit({"msg": "Checkout Failed (Card Decline)", "status": "error"})
