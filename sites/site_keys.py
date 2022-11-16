@@ -108,7 +108,7 @@ pihut_items = {'Raspberry Pi 3 Model B': 'collections/raspberry-pi/products.json
 }
 
 ameri_items = {'Teensy 4.0': 'collections/teensy/products.json|teensy-4-0|default'}
-envistia_items = {'Teensy 4.0': 'products.json|pjrc-teensy-4-0-imxrt1062-microcontroller-development-board|standard'}
+envistia_items = {'Teensy 4.0': 'collections/pjrc-teensy-microcontrollers/products.json|pjrc-teensy-4-0-imxrt1062-microcontroller-development-board|unlock'}
 
 pimoroni_items = {'Raspberry Pi 4 - 1GB RAM': 'collections/single-board-computers/products.json?limit=250|raspberry-pi-4|1GB RAM|true',
 'Raspberry Pi 4 - 2GB RAM': 'collections/single-board-computers/products.json?limit=250|raspberry-pi-4|2GB RAM|true',

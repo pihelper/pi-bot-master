@@ -19,7 +19,7 @@ pi_sites = {'ThePiHut': 'https://thepihut.com/',
                          'PiShop (US)' : 'https://www.pishop.us/',
                          'Sparkfun': 'https://www.sparkfun.com/',
                          'OKDO': 'https://www.odko.com/',
-                         'Adafruit (Guest)': 'https://www.adafruit.com',
+                         'Adafruit': 'https://www.adafruit.com',
                          'Ameridroid': 'https://ameridroid.com/',
                          'Envistia': 'https://envistiamall.com/'}
 

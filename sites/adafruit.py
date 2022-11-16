@@ -1,13 +1,16 @@
-import json
-import logging
 import random
 import time
+from os.path import exists
+
 import requests
 from bs4 import BeautifulSoup
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
 
 from utils import return_data, send_notif, format_proxy, load_session, save_session
 from webhook import failed_spark_web, good_spark_web, cart_web
 
+account_items = ['4292', '4295', '4296', '4564', '5291']
 
 class Adafruit:
 
@@ -18,6 +21,7 @@ class Adafruit:
         if self.proxy_list != False:
             self.update_random_proxy()
         self.settings = return_data("./data/settings.json")
+
         self.pid = ''
         self.image = ''
         self.item = ''
@@ -27,12 +31,28 @@ class Adafruit:
         self.csrf = ''
         self.current = ''
         self.price = ''
-        self.needs_account = False
+        self.current_step = ''
+
+        self.need_chrome = False
         self.product = self.product.split('[')[0].strip()
-        self.monitor()
-        if not self.needs_account:
+        self.has_account = False
+        self.shipping_method = ''
+        if self.acount_needed():
+            if not exists('./chromedriver.exe'):
+                self.status_signal.emit({"msg": "ChromeDriver.exe not found!", "status": "error"})
+                self.need_chrome = True
+            else:
+                self.get_session()
+        if not self.need_chrome:
+            self.monitor()
             self.cart()
             self.checkout()
+
+    def acount_needed(self):
+        for x in account_items:
+            if x in self.product:
+                return True
+        return False
 
     def get_headers(self):
         headers = {'authority': 'www.adafruit.com',
@@ -45,8 +65,8 @@ class Adafruit:
                    'sec-fetch-site': 'none',
                    'sec-fetch-user': '?1',
                    'upgrade-insecure-requests': '1',
-                   'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36'}
-
+                   'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36',
+                   'cookie': self.request_cookies()}
         return headers
 
     def get_checkout_token(self, html):
@@ -55,22 +75,70 @@ class Adafruit:
         spli = sub.split("'")[2]
         return spli
 
+    def get_session(self):
+        self.status_signal.emit({"msg": "Checking for session", "status": "normal"})
+        session = load_session(self.profile["shipping_email"], 'https://www.adafruit.com/')
+        if session == False:
+            self.login()
+        else:
+            for cookies in session[0]:
+                self.session.cookies.set(cookies, session[0][cookies], domain='.adafruit.com', path='/')
+            self.status_signal.emit({"msg": "Validating session", "status": "normal"})
+            account_get = self.session.get('https://accounts.adafruit.com/')
+            if 'sign_in' in account_get.url:
+                self.status_signal.emit({"msg": "Session no longer valid", "status": "normal"})
+                self.login()
+            else:
+                self.status_signal.emit({"msg": "Valid session found!", "status": "normal"})
+                self.has_account = True
+    def login(self):
+        self.status_signal.emit({"msg": "Awaiting Login", "status": "normal"})
+        options = Options()
+        options.headless = False
+        options.add_argument("window-size=800,600")
+        options.add_argument('enable-automation')
+        options.add_argument('--no-sandbox')
+        options.add_argument('--disable-dev-shm-usage')
+        options.add_argument('--disable-browser-side-navigation')
+        options.add_argument('--disable-gpu')
+        options.add_argument('log-level=3')
+        options.add_experimental_option("excludeSwitches", ["enable-automation"])
+        options.add_experimental_option('useAutomationExtension', False)
+        options.add_argument('disable-infobars')
+        driver = webdriver.Chrome(options=options)
+        driver.get('https://accounts.adafruit.com/users/sign_in')
+        while True:
+            while 'sign_in' in driver.current_url:
+                time.sleep(1)
+            self.status_signal.emit({"msg": "Checking login session", "status": "normal"})
+
+            for cookie in driver.get_cookies():
+                self.session.cookies.set(cookie['name'], cookie['value'], domain=cookie['domain'], path=cookie['path'])
+                print(cookie['name'], cookie['value'], cookie['domain'], cookie['path'])
+            account_check = self.session.get('https://accounts.adafruit.com/')
+            if 'sign_in' not in account_check.url:
+                self.status_signal.emit({"msg": "Session valid!", "status": "normal"})
+                driver.close()
+                save_session(self.profile['shipping_email'], 'https://www.adafruit.com/', self.session)
+                self.has_account = True
+                return
+            else:
+                self.status_signal.emit({"msg": "Session invalid, please retry", "status": "normal"})
+                driver.delete_all_cookies()
+                driver.get('https://accounts.adafruit.com/users/sign_in')
+
     def monitor(self):
         while True:
             self.status_signal.emit({"msg": "Checking stock", "status": "checking"})
-            page_get = self.session.get(str(self.product), headers=self.get_headers())
-            if page_get.status_code == 200:
-                soup = BeautifulSoup(page_get.content, 'html.parser')
-                if self.item == '':
-                    self.item = str(soup.find_all('meta', {'name': 'twitter:title'})[0].get('content'))
-                    self.product_signal.emit(f'{self.item} [{self.qty}]')
-                if self.image == '':
-                    self.image = str(soup.find_all('meta', {'name': 'twitter:image:src'})[0].get('content'))
-                if "We are now requiring a verified account <span class='italic'>with two-factor authentication enabled</span>" in page_get.text:
-                    self.status_signal.emit({"msg": "Item needs account", "status": "error"})
-                    self.needs_account = True
-                    return
-                else:
+            try:
+                page_get = self.session.get(str(self.product), headers=self.get_headers())
+                if page_get.status_code == 200:
+                    soup = BeautifulSoup(page_get.content, 'html.parser')
+                    if self.item == '':
+                        self.item = str(soup.find_all('meta', {'name': 'twitter:title'})[0].get('content'))
+                        self.product_signal.emit(f'{self.item} [{self.qty}]')
+                    if self.image == '':
+                        self.image = str(soup.find_all('meta', {'name': 'twitter:image:src'})[0].get('content'))
                     stock = str(soup.find_all('meta', {'name': 'twitter:data2'})[0].get('content')).lower()
                     if stock == 'out of stock':
                         self.status_signal.emit({"msg": "Waiting for restock", "status": "monitoring"})
@@ -80,6 +148,14 @@ class Adafruit:
                         self.pid = soup.find('input', {'name': 'pid'}).get('value')
                         self.security_token = soup.find('input', {'name': 'securityToken'}).get('value')
                         break
+                else:
+                    self.status_signal.emit({"msg": f"Error on monitor [{page_get.status_code}]", "status": "error"})
+                    self.update_random_proxy()
+                    time.sleep(float(self.error_delay))
+            except:
+                self.status_signal.emit({"msg": f"Error on monitor", "status": "error"})
+                self.update_random_proxy()
+                time.sleep(float(self.error_delay))
 
     def cart(self):
         self.status_signal.emit({"msg": "Adding to cart", "status": "normal"})
@@ -103,23 +179,30 @@ class Adafruit:
                 checkout_get = self.session.get('https://www.adafruit.com/checkout', headers=self.get_headers())
                 if 'step=' in checkout_get.url:
                     soup = BeautifulSoup(checkout_get.content, 'html.parser')
+                    self.current_step = checkout_get.url.split('=')[1]
                     self.csrf = soup.find('input', {'name': 'csrf_token'}).get('value')
+                else:
+                    self.status_signal.emit({"msg": "Error redirecting", "status": "error"})
+                    print(checkout_get.text)
 
     def checkout(self):
         profile = self.profile
         checkout_url = 'https://www.adafruit.com/checkout'
-        self.status_signal.emit({"msg": "Submitting Email", "status": "normal"})
-        step_1_form = {'csrf_token': self.csrf,
-                       'email_address': profile['shipping_email'],
-                       'checkout_guest': 1,
-                       'action': 'save_one'}
+        if self.current_step == '1':
+            self.status_signal.emit({"msg": "Submitting Email", "status": "normal"})
+            step_1_form = {'csrf_token': self.csrf,
+                           'email_address': profile['shipping_email'],
+                           'checkout_guest': 1,
+                           'action': 'save_one'}
 
-        step_1_post = self.session.post(checkout_url, data=step_1_form, headers=self.get_headers())
+            step_1_post = self.session.post(checkout_url, data=step_1_form, headers=self.get_headers())
 
-        if 'permanently disabled certain email addresses' in step_1_post.text:
-            self.status_signal.emit({"msg": "Email Banned", "status": "error"})
-            return
-        elif 'step=2' in step_1_post.url:
+            if 'permanently disabled certain email addresses' in step_1_post.text:
+                self.status_signal.emit({"msg": "Email Banned", "status": "error"})
+                return
+            elif 'step=2' in step_1_post.url:
+                self.current_step = '2'
+        if self.current_step == '2':
             self.status_signal.emit({"msg": "Submitting Address", "status": "normal"})
             step_2_form = {'csrf_token': self.csrf,
                            'delivery_use_anyways': 1,
@@ -139,57 +222,61 @@ class Adafruit:
                 self.status_signal.emit({"msg": "Address Banned", "status": "error"})
                 return
             elif 'step=3' in step_2_post.url:
-                self.status_signal.emit({"msg": "Submitting shipping method", "status": "normal"})
+                self.current_step = '3'
                 soup = BeautifulSoup(step_2_post.content, 'html.parser')
-                shipping_method = soup.find_all('input', {'data-module': 'usps'})[0].get('value')
-                step_3_form = {'csrf_token': self.csrf,
-                               'shipping': shipping_method,
-                               'action': 'save_three'}
-                step_3_post = self.session.post(checkout_url, data=step_3_form, headers=self.get_headers())
+                self.shipping_method = soup.find_all('input', {'data-module': 'usps'})[0].get('value')
+        if self.current_step == '3':
+            self.status_signal.emit({"msg": "Submitting shipping method", "status": "normal"})
+            step_3_form = {'csrf_token': self.csrf,
+                           'shipping': self.shipping_method,
+                           'action': 'save_three'}
+            step_3_post = self.session.post(checkout_url, data=step_3_form, headers=self.get_headers())
 
-                if 'step=4' in step_3_post.url:
-                    self.status_signal.emit({"msg": "Submitting payment", "status": "normal"})
-                    step_4_form = {'csrf_token' : self.csrf,
-                                   'action': 'save_four',
-                                   'payment': 'authorizenet_aim',
-                                   'authorizenet_aim_cc_owner': f"{profile['shipping_fname']} {profile['shipping_lname']}",
-                                   'authorizenet_aim_cc_number': profile['card_number'],
-                                   'authorizenet_aim_cc_expires_month': profile['card_month'],
-                                   'authorizenet_aim_cc_expires_year': profile['card_year'],
-                                   'authorizenet_aim_cc_cvv': profile['card_cvv'],
-                                   'card-type': 'amex',
-                                   'po_payment_type': 'replacement'}
-                    step_4_post = self.session.post(checkout_url, data=step_4_form, headers=self.get_headers())
+            if 'step=4' in step_3_post.url:
+                self.current_step = '4'
+        if self.current_step == '4':
+            self.status_signal.emit({"msg": "Submitting payment", "status": "normal"})
+            step_4_form = {'csrf_token' : self.csrf,
+                           'action': 'save_four',
+                           'payment': 'authorizenet_aim',
+                           'authorizenet_aim_cc_owner': f"{profile['shipping_fname']} {profile['shipping_lname']}",
+                           'authorizenet_aim_cc_number': profile['card_number'],
+                           'authorizenet_aim_cc_expires_month': profile['card_month'],
+                           'authorizenet_aim_cc_expires_year': profile['card_year'],
+                           'authorizenet_aim_cc_cvv': profile['card_cvv'],
+                           'card-type': 'amex',
+                           'po_payment_type': 'replacement'}
+            step_4_post = self.session.post(checkout_url, data=step_4_form, headers=self.get_headers())
 
-                    if step_4_post.url == 'https://www.adafruit.com/checkout':
-                        self.status_signal.emit({"msg": "Submitting order", "status": "alt"})
-                        soup = BeautifulSoup(step_4_post.content, 'html.parser')
-                        values = ['cc_owner', 'cc_expires', 'cc_type', 'cc_number', 'cc_cvv', 'zenid']
-                        final_checkout_form = {'csrf_token': self.csrf}
+            if step_4_post.url == 'https://www.adafruit.com/checkout':
+                self.status_signal.emit({"msg": "Submitting order", "status": "alt"})
+                soup = BeautifulSoup(step_4_post.content, 'html.parser')
+                values = ['cc_owner', 'cc_expires', 'cc_type', 'cc_number', 'cc_cvv', 'zenid']
+                final_checkout_form = {'csrf_token': self.csrf}
 
-                        for value in values:
-                            final_checkout_form[value] = soup.find('input', {'name': value}).get('value')
+                for value in values:
+                    final_checkout_form[value] = soup.find('input', {'name': value}).get('value')
 
-                        final_post = self.session.post('https://www.adafruit.com/index.php?main_page=checkout_process', data=final_checkout_form, headers=self.get_headers())
-
-                        if 'Your credit card could not be authorized' in final_post.text:
-                            self.status_signal.emit({"msg": "Checkout Failed (Card Decline)", "status": "error"})
-                            if self.settings['webhookfailed']:
-                                failed_spark_web(self.product, self.image,'Adafruit (Guest)', self.item, self.profile["profile_name"])
-                            if self.settings['notiffailed']:
-                                send_notif(self.item, 'fail')
-                        elif 'checkout_success' in final_post.url:
-                            self.status_signal.emit({"msg": "Successful Checkout", "status": "success"})
-                            if self.settings['webhooksuccess']:
-                                good_spark_web({str(self.product)}, self.image,'Adafruit (Guest)',self.item, self.profile["profile_name"])
-                            if self.settings['notifsuccess']:
-                                send_notif(self.item, 'success')
-                        else:
-                            self.status_signal.emit({"msg": "Checkout Failed (Other)", "status": "error"})
-                            if self.settings['webhookfailed']:
-                                failed_spark_web(self.product, self.image,'Adafruit (Guest)', self.item, self.profile["profile_name"])
-                            if self.settings['notiffailed']:
-                                send_notif(self.item, 'fail')
+                final_post = self.session.post('https://www.adafruit.com/index.php?main_page=checkout_process', data=final_checkout_form, headers=self.get_headers())
+                print(final_post.text)
+                if 'Your credit card could not be authorized' in final_post.text:
+                    self.status_signal.emit({"msg": "Checkout Failed (Card Decline)", "status": "error"})
+                    if self.settings['webhookfailed']:
+                        failed_spark_web(self.product, self.image,'Adafruit (Guest)', self.item, self.profile["profile_name"])
+                    if self.settings['notiffailed']:
+                        send_notif(self.item, 'fail')
+                elif 'checkout_success' in final_post.url:
+                    self.status_signal.emit({"msg": "Successful Checkout", "status": "success"})
+                    if self.settings['webhooksuccess']:
+                        good_spark_web({str(self.product)}, self.image,'Adafruit (Guest)',self.item, self.profile["profile_name"])
+                    if self.settings['notifsuccess']:
+                        send_notif(self.item, 'success')
+                else:
+                    self.status_signal.emit({"msg": "Checkout Failed (Other)", "status": "error"})
+                    if self.settings['webhookfailed']:
+                        failed_spark_web(self.product, self.image,'Adafruit (Guest)', self.item, self.profile["profile_name"])
+                    if self.settings['notiffailed']:
+                        send_notif(self.item, 'fail')
 
 
     def get_shipping_zone(self):
@@ -197,6 +284,12 @@ class Adafruit:
         for zone in zones:
             if self.profile['shipping_state'] == zone['code']:
                 return zone['id']
+
+    def request_cookies(self):
+        cook_string = ''
+        for cook in self.session.cookies:
+            cook_string += f'; {cook.name}={cook.value}'
+        return cook_string[2:]
 
     def update_random_proxy(self):
         if self.proxy_list != False:
