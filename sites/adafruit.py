@@ -231,7 +231,6 @@ class Adafruit:
                            'shipping': self.shipping_method,
                            'action': 'save_three'}
             step_3_post = self.session.post(checkout_url, data=step_3_form, headers=self.get_headers())
-
             if 'step=4' in step_3_post.url:
                 self.current_step = '4'
         if self.current_step == '4':
@@ -246,13 +245,21 @@ class Adafruit:
                            'authorizenet_aim_cc_cvv': profile['card_cvv'],
                            'card-type': 'amex',
                            'po_payment_type': 'replacement'}
+            try:
+                soup = BeautifulSoup(step_3_post.content, 'html.parser')
+                step_4_form["acp_id"] = soup.find('input', {'name': 'acp_id'}).get('value')
+            except:
+                print("Couldn't find acp_id")
+
             step_4_post = self.session.post(checkout_url, data=step_4_form, headers=self.get_headers())
+
+
 
             if step_4_post.url == 'https://www.adafruit.com/checkout':
                 self.status_signal.emit({"msg": "Submitting order", "status": "alt"})
                 soup = BeautifulSoup(step_4_post.content, 'html.parser')
                 values = ['cc_owner', 'cc_expires', 'cc_type', 'cc_number', 'cc_cvv', 'zenid']
-                final_checkout_form = {'csrf_token': self.csrf}
+                final_checkout_form = {'csrf_token': self.csrf, 'cc_nickname': ''}
 
                 for value in values:
                     final_checkout_form[value] = soup.find('input', {'name': value}).get('value')
