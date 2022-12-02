@@ -175,6 +175,32 @@ class Adafruit:
                 if self.settings['webhookcart']:
                     cart_web(self.product, self.image, 'Adafruit (Guest)', self.item,
                              self.profile['profile_name'])
+
+                self.status_signal.emit({"msg": "Navigating to cart", "status": "normal"})
+                cart_get = self.session.get('https://www.adafruit.com/shopping_cart', headers=self.get_headers())
+                soup = BeautifulSoup(cart_get.content, 'html.parser')
+                security_token = soup.find('input', {'name': 'securityToken'}).get('value')
+
+                cart_change_form = {'action': 'update_quantity',
+                                    'pid': self.pid,
+                                    'qty': self.qty,
+                                    'securityToken': security_token,
+                                    'return_full_cart': 1}
+
+                for carted in soup.find_all('div', {'class': 'cart-row'}):
+                    pid = str(carted.get('data-pid'))
+                    print(f'In Cart: {pid}')
+                    if pid != self.pid:
+                        cart_delete_form = {'action': 'delete_product',
+                                            'pid': pid,
+                                            'securityToken': security_token,
+                                            'return_full_cart': 1}
+                        self.status_signal.emit({"msg": f"Deleting PID from cart: {pid}", "status": "normal"})
+                        cart_del_post = self.session.post('https://www.adafruit.com/api/wildCart.php',
+                                                             headers=self.get_headers(), data=cart_delete_form)
+
+                self.status_signal.emit({"msg": f"Force Set Quantity [{self.qty}]", "status": "normal"})
+                cart_change_post = self.session.post('https://www.adafruit.com/api/wildCart.php', headers=self.get_headers(), data=cart_change_form)
                 self.status_signal.emit({"msg": "Redirecting to checkout", "status": "normal"})
                 checkout_get = self.session.get('https://www.adafruit.com/checkout', headers=self.get_headers())
                 if 'step=' in checkout_get.url:
