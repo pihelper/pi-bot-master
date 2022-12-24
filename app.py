@@ -3,14 +3,15 @@ from threading import Thread
 from PyQt5 import QtCore, QtGui, QtWidgets
 
 from harvester import Harvester
+from pages import createdialog
+from pages.custompage import CustomPage
 from pages.homepage import TaskTab, HomePage
 from pages.createdialog import CreateDialog, get_shopify_url
 from pages.profilespage import ProfilesPage
 from pages.proxiespage import ProxiesPage
 from pages.settingspage import SettingsPage
 import images.images, sys, os
-from sites.site_keys import chigaco_items, get_item_info, vilros_items, pihut_items, sbc_items, pimoroni_items, \
-    cool_items, pi3g_items, ameri_items, envistia_items
+from sites.site_keys import get_item_info
 
 
 def no_abort(a, b, c):
@@ -22,7 +23,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setupUi(self)
         self.show()
     def setupUi(self, MainWindow):
-        self.version ='1.081'
+        self.version ='1.1'
         MainWindow.setFixedSize(1109, 600)
         MainWindow.setStyleSheet("background-color: #1E1E1E;")
         MainWindow.setWindowTitle(f"Pi Bot - Version {self.version}")
@@ -73,6 +74,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.proxies_icon.setStyleSheet("border: none;")
         self.proxies_icon.setPixmap(QtGui.QPixmap("images/proxies.png"))
         self.proxies_icon.setScaledContents(True)
+
         self.settings_tab = QtWidgets.QWidget(self.sidebar)
         self.settings_tab.setGeometry(QtCore.QRect(0, 220, 60, 45))
         self.settings_tab.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
@@ -85,6 +87,19 @@ class MainWindow(QtWidgets.QMainWindow):
         self.settings_icon.setStyleSheet("border: none;")
         self.settings_icon.setPixmap(QtGui.QPixmap("images/settings.png"))
         self.settings_icon.setScaledContents(True)
+
+        self.custom_tab = QtWidgets.QWidget(self.sidebar)
+        self.custom_tab.setGeometry(QtCore.QRect(0, 265, 60, 45))
+        self.custom_tab.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
+        self.custom_tab.setStyleSheet("background-color: transparent;border: none;")
+        self.custom_active_tab = QtWidgets.QWidget(self.custom_tab)
+        self.custom_active_tab.setGeometry(QtCore.QRect(0, 0, 4, 45))
+        self.custom_active_tab.setStyleSheet("background-color: transparent;border: none;")
+        self.custom_icon = QtWidgets.QLabel(self.custom_tab)
+        self.custom_icon.setGeometry(QtCore.QRect(21, 13, 20, 20))
+        self.custom_icon.setStyleSheet("border: none;")
+        self.custom_icon.setPixmap(QtGui.QPixmap("images/custom.png"))
+        self.custom_icon.setScaledContents(True)
 
         self.logo = QtWidgets.QLabel(self.sidebar)
         self.logo.setGeometry(QtCore.QRect(10, 23, 41, 41))
@@ -103,6 +118,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.proxiespage.hide()
         self.settingspage = SettingsPage(self.centralwidget)
         self.settingspage.hide()
+        self.custompage = CustomPage(self.centralwidget)
+        self.custompage.hide()
         MainWindow.setCentralWidget(self.centralwidget)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
         self.set_functions()
@@ -125,6 +142,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.profiles_tab.mousePressEvent = lambda event: self.change_page(event,"profiles")
         self.proxies_tab.mousePressEvent = lambda event: self.change_page(event,"proxies")
         self.settings_tab.mousePressEvent = lambda event: self.change_page(event,"settings")
+        self.custom_tab.mousePressEvent = lambda event: self.change_page(event, "custom")
         self.homepage.newtask_btn.clicked.connect(self.createdialog.show)
     
     def change_page(self,event,current_page):
@@ -157,29 +175,14 @@ class MainWindow(QtWidgets.QMainWindow):
             product = self.createdialog.link.text()
             size = ''
             info = self.createdialog.link.text()
+        elif 'Shopify Drop' in site:
+            product = self.createdialog.info_edit.text()
+            size = self.createdialog.size_edit.text()
+            info = self.createdialog.link.text()
         else:
-
-            if site == 'Chicago Dist.':
-                dict = chigaco_items
-            elif site == 'Vilros':
-                dict = vilros_items
-            elif site == 'ThePiHut':
-                dict = pihut_items
-            elif site == 'SBComponents (UK)':
-                dict = sbc_items
-            elif site == 'Pimoroni (UK)':
-                dict = pimoroni_items
-            elif site == 'Cool Components (UK)':
-                dict = cool_items
-            elif site == 'pi3g (DE)':
-                dict = pi3g_items
-            elif site == 'Ameridroid':
-                dict = ameri_items
-            elif site == 'Envistia':
-                dict = envistia_items
             product = self.createdialog.shopify_select.currentText()
-            size = get_item_info(dict,self.createdialog.shopify_select.currentText())
-            info = get_shopify_url(site)
+            size = self.createdialog.base_items[site]['items'][product]
+            info = self.createdialog.base_items[site]['site']
             mode = self.createdialog.mode_box.currentText()
         captcha_type = self.createdialog.captcha_box.currentText()
         profile = self.createdialog.profile_box.currentText()

@@ -1,3 +1,5 @@
+import json
+
 from PyQt5 import QtCore, QtGui, QtWidgets
 import sys,platform
 
@@ -9,19 +11,11 @@ def no_abort(a, b, c):
     sys.__excepthook__(a, b, c)
 sys.excepthook = no_abort
 
-pi_sites = {'ThePiHut': 'https://thepihut.com/',
-                         'Vilros': 'https://vilros.com/',
-                         'Chicago Dist.': 'https://chicagodist.com/',
-                         'Pimoroni (UK)' : 'https://shop.pimoroni.com/',
-                         'SBComponents (UK)' : 'https://shop.sb-components.co.uk/',
-                         'pi3g (DE)': 'https://buyzero.de/',
-                         'Cool Components (UK)' : 'https://coolcomponents.co.uk/',
-                         'PiShop (US)' : 'https://www.pishop.us/',
+pi_sites = {'PiShop (US)' : 'https://www.pishop.us/',
                          'Sparkfun': 'https://www.sparkfun.com/',
                          'OKDO': 'https://www.odko.com/',
-                         'Adafruit': 'https://www.adafruit.com',
-                         'Ameridroid': 'https://ameridroid.com/',
-                         'Envistia': 'https://envistiamall.com/'}
+                         'Adafruit': 'https://www.adafruit.com'}
+
 
 def get_shopify_url(name):
     return pi_sites[name]
@@ -36,6 +30,7 @@ class CreateDialog(QtWidgets.QDialog):
         CreateDialog.setFixedSize(647, 160)
         CreateDialog.setStyleSheet("QComboBox::drop-down {    border: 0px;}QComboBox::down-arrow {    image: url(:/images/down_icon.png);    width: 14px;    height: 14px;}QComboBox{    padding: 1px 0px 1px 3px;}QLineEdit:focus {   border: none;   outline: none;} QSpinBox::up-button {subcontrol-origin: border;subcontrol-position: top right;width: 8px; border-image: url(:/images/uparrow_icon.png) 1;border-width: 1px;}QSpinBox::down-button {subcontrol-origin: border;subcontrol-position: bottom right;width: 8px;border-image: url(:/images/downarrow_icon.png) 1;border-width: 1px;border-top-width: 0;}")
         CreateDialog.setWindowTitle("Create Tasks")
+
         self.background = QtWidgets.QWidget(CreateDialog)
         self.background.setGeometry(QtCore.QRect(0, 0, 691, 391))
         self.background.setStyleSheet("background-color: #1E1E1E;")
@@ -63,9 +58,19 @@ class CreateDialog(QtWidgets.QDialog):
         self.info_edit.setStyleSheet(
             "outline: 0;border: 1px solid #60a8ce;border-width: 0 0 2px;color: rgb(234, 239, 239);")
         self.info_edit.setAttribute(QtCore.Qt.WA_MacShowFocusRect, 0)
-        self.info_edit.setPlaceholderText("KW / Link / Variant")
+        self.info_edit.setPlaceholderText("Product Keywords")
         self.info_edit.setFont(font)
         self.info_edit.setVisible(False)
+
+        self.size_edit = QtWidgets.QLineEdit(self.background)
+        self.size_edit.setGeometry(QtCore.QRect(450, 55, 151, 21))
+        self.size_edit.setFocusPolicy(QtCore.Qt.ClickFocus)
+        self.size_edit.setStyleSheet(
+            "outline: 0;border: 1px solid #60a8ce;border-width: 0 0 2px;color: rgb(234, 239, 239);")
+        self.size_edit.setAttribute(QtCore.Qt.WA_MacShowFocusRect, 0)
+        self.size_edit.setPlaceholderText("Size Keywords")
+        self.size_edit.setFont(font)
+        self.size_edit.setVisible(False)
 
         self.account_box = QtWidgets.QComboBox(self.background)
         self.account_box.setGeometry(QtCore.QRect(50, 120, 151, 21))
@@ -198,14 +203,13 @@ class CreateDialog(QtWidgets.QDialog):
         self.taskcount_spinbox.setMinimum(1)
         self.taskcount_spinbox.setAttribute(QtCore.Qt.WA_MacShowFocusRect, 0)
 
-        pi_site_list = sorted(pi_sites.keys(), key=str.lower)
-        item_list = sorted(chigaco_items.keys(), key=str.lower)
-        self.shopify_select.addItems(item_list)
-        self.shopify_select.setCurrentText(item_list[0])
-        self.site_box.addItems(pi_site_list)
-        self.site_box.setCurrentText(pi_site_list[0])
-        self.site_box.activated.connect(self.on_site_click)
-        QtCore.QMetaObject.connectSlotsByName(CreateDialog)
+        self.refresh_button = QtWidgets.QPushButton(self.background)
+        self.refresh_button.setGeometry(QtCore.QRect(50, 110, 151, 32))
+        self.refresh_button.setText("Refresh Sites")
+        self.refresh_button.setFont(font)
+        self.refresh_button.setStyleSheet("border-radius: 10px;background-color: #60a8ce;color: #FFFFFF;")
+        self.refresh_button.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
+        self.refresh_button.clicked.connect(self.update_items)
 
         self.shopify_select.setVisible(False)
         self.qty_spinbox.setVisible(True)
@@ -216,7 +220,28 @@ class CreateDialog(QtWidgets.QDialog):
         self.link.setVisible(True)
         self.link.setPlaceholderText('Adafruit Link')
         self.mode_box.setVisible(False)
+        self.update_items()
+        self.site_box.activated.connect(self.on_site_click)
+        QtCore.QMetaObject.connectSlotsByName(CreateDialog)
 
+    def update_items(self):
+        self.base_items = json.loads(open('./data/base_items.json', 'r').read())
+        self.custom_items = json.loads(open('./data/custom_items.json', 'r').read())
+        self.site_box.clear()
+        for item in self.custom_items:
+            if item not in self.base_items:
+                self.base_items[item] = {'site': self.custom_items[item]['site'],
+                                         'items': self.custom_items[item]['items']}
+            else:
+                for it in self.custom_items[item]['items']:
+                    self.base_items[item]['items'][it] = self.custom_items[item]['items'][it]
+        site_list = ['Adafruit', 'OKDO', 'PiShop (US)', 'Sparkfun', 'Shopify Drop']
+        for site in self.base_items:
+            if site not in site_list:
+                site_list.append(site)
+        site_list.sort(key=str.lower)
+        self.site_box.addItems(site_list)
+        self.on_site_click()
     def load_data(self, task_tab):
         self.site_box.setCurrentText(task_tab.site)
         self.site_box.setEditable(False)
@@ -225,6 +250,7 @@ class CreateDialog(QtWidgets.QDialog):
         self.qty_label.setVisible(True)
         self.qty_spinbox.setVisible(True)
         self.mode_box.setVisible(False)
+        self.size_edit.setVisible(False)
         if 'Sparkfun' in self.site_box.currentText():
             self.captcha_box.setVisible(False)
             self.account_user.setVisible(True)
@@ -255,31 +281,23 @@ class CreateDialog(QtWidgets.QDialog):
             self.link.setVisible(True)
             self.link.setText(task_tab.product)
             self.link.setPlaceholderText('Product Link')
+        elif self.site_box.currentText() == 'Shopify Drop':
+            self.captcha_box.setVisible(False)
+            self.account_user.setVisible(False)
+            self.account_pass.setVisible(False)
+            self.link.setVisible(True)
+            self.link.setText(task_tab.info)
+            self.link.setPlaceholderText('Base Shopify URL')
+            self.info_edit.setVisible(True)
+            self.size_edit.setVisible(True)
+            self.info_edit.setText(task_tab.product)
+            self.size_edit.setText(task_tab.size)
         else:
             self.shopify_select.setVisible(True)
             self.link.setVisible(False)
             self.captcha_box.setVisible(False)
-            if self.site_box.currentText() == 'Chicago Dist.':
-                mode = chigaco_items
-            elif self.site_box.currentText() == 'Vilros':
-                mode = vilros_items
-            elif self.site_box.currentText() == 'ThePiHut':
-                mode = pihut_items
-            elif self.site_box.currentText() == 'SBComponents (UK)':
-                mode = sbc_items
-            elif self.site_box.currentText() == 'Pimoroni (UK)':
-                mode = pimoroni_items
-            elif self.site_box.currentText() == 'Cool Components (UK)':
-                mode = cool_items
-            elif self.site_box.currentText() == 'pi3g (DE)':
-                mode = pi3g_items
-            elif self.site_box.currentText() == 'Ameridroid':
-                mode = ameri_items
-            elif self.site_box.currentText() == 'Envistia':
-                mode = envistia_items
-            item_list = sorted(mode.keys(), key=str.lower)
-            self.info_edit.setText(get_shopify_url(task_tab.site))
-            self.shopify_select.addItems(item_list)
+            for item in self.base_items[self.site_box.currentText()]['items']:
+                self.shopify_select.addItem(item)
             self.shopify_select.setCurrentText(task_tab.product)
         self.profile_box.setCurrentText(task_tab.profile)
         self.proxies_box.setCurrentText(task_tab.proxies)
@@ -291,10 +309,22 @@ class CreateDialog(QtWidgets.QDialog):
     def on_site_click(self):
         self.shopify_select.clear()
         self.addtask_btn.setGeometry(QtCore.QRect(250, 110, 151, 32))
+        self.refresh_button.setGeometry(QtCore.QRect(50, 110, 151, 32))
         self.CreateDialog.setFixedSize(647, 160)
+
+        self.monitor_label.setGeometry(QtCore.QRect(500, 84, 151, 21))
+        self.error_label.setGeometry(QtCore.QRect(512, 114, 151, 21))
+        self.qty_label.setGeometry(QtCore.QRect(530, 55, 151, 21))
+        self.qty_spinbox.setGeometry(QtCore.QRect(585, 55, 25, 21))
+        self.monitor_edit.setGeometry(QtCore.QRect(585, 85, 25, 21))
+        self.error_edit.setGeometry(QtCore.QRect(585, 115, 25, 21))
+        self.taskcount_spinbox.setGeometry(QtCore.QRect(420, 115, 41, 21))
+
         self.account_user.setVisible(False)
         self.account_pass.setVisible(False)
         self.mode_box.setVisible(False)
+        self.size_edit.setVisible(False)
+        self.info_edit.setVisible(False)
         if 'PiShop' in self.site_box.currentText():
             self.info_edit.setVisible(False)
             self.shopify_select.setVisible(False)
@@ -321,6 +351,14 @@ class CreateDialog(QtWidgets.QDialog):
             self.link.setPlaceholderText('Sparkfun PID')
             self.CreateDialog.setFixedSize(647, 175)
             self.addtask_btn.setGeometry(QtCore.QRect(250, 125, 151, 32))
+            self.refresh_button.setGeometry(QtCore.QRect(50, 125, 151, 32))
+            self.monitor_label.setGeometry(QtCore.QRect(500, 99, 151, 21))
+            self.error_label.setGeometry(QtCore.QRect(512, 129, 151, 21))
+            self.qty_label.setGeometry(QtCore.QRect(530, 70, 151, 21))
+            self.qty_spinbox.setGeometry(QtCore.QRect(585, 70, 25, 21))
+            self.monitor_edit.setGeometry(QtCore.QRect(585, 100, 25, 21))
+            self.error_edit.setGeometry(QtCore.QRect(585, 130, 25, 21))
+            self.taskcount_spinbox.setGeometry(QtCore.QRect(420, 130, 41, 21))
             self.account_user.setVisible(True)
             self.account_pass.setVisible(True)
         elif 'OKDO' in self.site_box.currentText():
@@ -331,31 +369,31 @@ class CreateDialog(QtWidgets.QDialog):
             self.qty_label.setVisible(True)
             self.captcha_box.setVisible(False)
             self.link.setPlaceholderText('Product Link')
+        elif self.site_box.currentText() == 'Shopify Drop':
+            self.info_edit.setVisible(True)
+            self.shopify_select.setVisible(False)
+            self.link.setVisible(True)
+            self.qty_spinbox.setVisible(True)
+            self.qty_label.setVisible(True)
+            self.captcha_box.setVisible(False)
+            self.size_edit.setVisible(True)
+            self.link.setPlaceholderText('Base Shopify URL')
+            self.CreateDialog.setFixedSize(647, 175)
+            self.addtask_btn.setGeometry(QtCore.QRect(250, 125, 151, 32))
+            self.refresh_button.setGeometry(QtCore.QRect(50, 125, 151, 32))
+            self.monitor_label.setGeometry(QtCore.QRect(500, 109, 151, 21))
+            self.error_label.setGeometry(QtCore.QRect(512, 139, 151, 21))
+            self.qty_label.setGeometry(QtCore.QRect(530, 80, 151, 21))
+            self.qty_spinbox.setGeometry(QtCore.QRect(585, 80, 25, 21))
+            self.monitor_edit.setGeometry(QtCore.QRect(585, 110, 25, 21))
+            self.error_edit.setGeometry(QtCore.QRect(585, 140, 25, 21))
+            self.taskcount_spinbox.setGeometry(QtCore.QRect(420, 130, 41, 21))
         else:
             self.shopify_select.setVisible(True)
             self.link.setVisible(False)
             self.captcha_box.setVisible(False)
             #self.mode_box.setVisible(True)
-
-            if 'Chicago Dist.' == self.site_box.currentText():
-                item_list = sorted(chigaco_items.keys(), key=str.lower)
-            elif 'Vilros' == self.site_box.currentText():
-                item_list = sorted(vilros_items.keys(), key=str.lower)
-            elif 'ThePiHut' == self.site_box.currentText():
-                item_list = sorted(pihut_items.keys(), key=str.lower)
-            elif 'SBComponents (UK)' == self.site_box.currentText():
-                item_list = sorted(sbc_items.keys(), key=str.lower)
-            elif 'Cool Components (UK)' == self.site_box.currentText():
-                item_list = sorted(cool_items.keys(), key=str.lower)
-            elif 'Pimoroni (UK)' == self.site_box.currentText():
-                item_list = sorted(pimoroni_items.keys(), key=str.lower)
-            elif 'pi3g (DE)' == self.site_box.currentText():
-                item_list = sorted(pi3g_items.keys(), key=str.lower)
-            elif 'Ameridroid' == self.site_box.currentText():
-                item_list = sorted(ameri_items.keys(), key=str.lower)
-            elif 'Envistia' == self.site_box.currentText():
-                item_list = sorted(envistia_items.keys(), key=str.lower)
-
-            self.shopify_select.addItems(item_list)
-            self.shopify_select.setCurrentText(item_list[0])
+            for item in self.base_items[self.site_box.currentText()]['items']:
+                self.shopify_select.addItem(item)
+            self.shopify_select.setCurrentIndex(0)
 

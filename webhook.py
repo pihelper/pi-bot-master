@@ -9,7 +9,7 @@ import settings
 def good_web(url, image, site, prod, prof, price, speed):
     embed_to_send = {'embeds': [{'title': 'Successful Checkout!', 'url': url, 'color': 6075075, 'footer': {'text': f'Pi Bot - {datetime.now()}'}, 'fields': []}]}
     if image != '':
-        embed_to_send['thumbnail'] = {'url': image}
+        embed_to_send['embeds'][0]['thumbnail'] = {'url': image}
     embed_to_send['embeds'][0]['fields'].append({'name': 'Module', 'value': site})
     embed_to_send['embeds'][0]['fields'].append({'name': 'Item', 'value': prod})
     embed_to_send['embeds'][0]['fields'].append({'name': 'Profile', 'value': f'||{prof}||'})
@@ -33,7 +33,7 @@ def failed_web(url, image, site, prod, prof, price, speed):
     embed_to_send = {'embeds': [
         {'title': 'Failed Checkout', 'url': url, 'color': 13893632, 'footer': {'text': f'Pi Bot - {datetime.now()}'}, 'fields': []}]}
     if image != '':
-        embed_to_send['thumbnail'] = {'url': image}
+        embed_to_send['embeds'][0]['thumbnail'] = {'url': image}
     embed_to_send['embeds'][0]['fields'].append({'name': 'Module', 'value': site})
     embed_to_send['embeds'][0]['fields'].append({'name': 'Item', 'value': prod})
     embed_to_send['embeds'][0]['fields'].append({'name': 'Profile', 'value': f'||{prof}||'})
@@ -57,7 +57,7 @@ def cart_web(url, image, site, prod, prof):
     embed_to_send = {'embeds': [
         {'title': 'Item Carted', 'url': url, 'color': 16758888, 'footer': {'text': f'Pi Bot - {datetime.now()}'}, 'fields': []}]}
     if image != '':
-        embed_to_send['thumbnail'] = {'url': image}
+        embed_to_send['embeds'][0]['thumbnail'] = {'url': image}
     embed_to_send['embeds'][0]['fields'].append({'name': 'Module', 'value': site})
     embed_to_send['embeds'][0]['fields'].append({'name': 'Item', 'value': prod})
     embed_to_send['embeds'][0]['fields'].append({'name': 'Profile', 'value': f'||{prof}||'})

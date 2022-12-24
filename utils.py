@@ -53,6 +53,23 @@ def write_data(path,data):
     with open(path, "w") as file:
         json.dump(data, file)
     file.close()
+
+def create_custom():
+    # Checks for data directory, creates if not there
+    dir_path = './data/'
+    if not os.path.exists(dir_path):
+        os.makedirs(dir_path)
+    path = './data/custom_items.json'
+    if not exists(path):
+        check_file = open(path, "x")
+        check_file.close()
+        with open(path, 'w+') as file:
+            default_settings = {}
+            sites = json.loads(open('./data/base_items.json', 'r').read())
+            for site in sites:
+                default_settings[site] = {'site': sites[site]['site'], 'items': {}}
+            json.dump(default_settings, file)
+        file.close()
 def create_settings():
     # Checks for data directory, creates if not there
     dir_path = './data/'

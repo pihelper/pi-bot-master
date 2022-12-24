@@ -5,8 +5,9 @@ from sites.okdo import Okdo
 from sites.pishop import PiShop
 from sites.shop import Shop
 from pages.createdialog import CreateDialog
+from sites.shopsafe import Shopsafe
 from sites.sparkfun import Sparkfun
-from utils import get_profile, PiLogger, return_data, write_data, get_proxy_list, create_settings
+from utils import get_profile, PiLogger, return_data, write_data, get_proxy_list, create_settings, create_custom
 import urllib.request,sys,platform
 
 def no_abort(a, b, c):
@@ -18,6 +19,7 @@ class HomePage(QtWidgets.QWidget):
         super(HomePage, self).__init__(parent)
         self.setupUi(self)
         create_settings()
+        create_custom()
         self.load_tasks()
     def setupUi(self, homepage):
         global tasks
@@ -453,6 +455,10 @@ class TaskTab(QtWidgets.QWidget):
             self.product = self.edit_dialog.link.text()
             self.info = self.edit_dialog.link.text()
             self.size = ''
+        elif 'Shopify Drop' in self.site:
+            self.product = self.edit_dialog.info_edit.text()
+            self.info = self.edit_dialog.link.text()
+            self.size = self.edit_dialog.size_edit.text()
         else:
             self.product=self.edit_dialog.shopify_select.currentText()
             self.info = self.info_label.text()
@@ -503,7 +509,6 @@ class TaskThread(QtCore.QThread):
         if proxy == None:
             self.status_signal.emit({"msg":"Invalid proxy list","status":"error"})
             return
-
         if 'PiShop' in self.site:
             PiShop(self.task_id, self.status_signal, self.product_signal, self.product, self.info, self.size, profile,
                  proxy, self.monitor_delay, self.error_delay,self.captcha_type, self.qty)
@@ -522,6 +527,10 @@ class TaskThread(QtCore.QThread):
         elif 'Adafruit' in self.site:
             Adafruit(self.task_id, self.status_signal, self.product_signal, self.product, self.size, profile,
                      proxy, self.monitor_delay, self.error_delay, self.captcha_type, self.qty)
+        elif self.site == 'Shopify Drop':
+            Shopsafe(self.task_id, self.status_signal, self.product_signal, self.product, self.info, self.size, profile,
+                 proxy, self.monitor_delay, self.error_delay, self.qty)
+
         else:
             Shop(self.task_id, self.status_signal, self.product_signal, self.product, self.info, self.size, profile, proxy, self.monitor_delay,self.error_delay, self.qty)
 
