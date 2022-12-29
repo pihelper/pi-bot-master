@@ -1,3 +1,5 @@
+import os
+
 import requests
 from PyQt5 import QtCore, QtGui, QtWidgets
 from plyer import notification
@@ -186,12 +188,7 @@ class SettingsPage(QtWidgets.QWidget):
     def test_notif(self):
         current_os = platform.system().lower()
         if 'linux' in current_os:
-            notification.notify(
-                title='[Pi Bot] Test Notification',
-                message='This is a test notification!',
-                app_icon='icon.ico',
-                timeout=5
-            )
+            os.system('notify-send "' + '[Pi Bot] Test Notification' + '" "' + 'This is a test notification!' + '"')
         elif 'darwin' in current_os:
             mac_notify('[Pi Bot] Test Notification', "This is a test notification!")
         elif 'window' in current_os:
