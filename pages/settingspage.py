@@ -188,7 +188,7 @@ class SettingsPage(QtWidgets.QWidget):
     def test_notif(self):
         current_os = platform.system().lower()
         if 'linux' in current_os:
-            os.system('notify-send "' + '[Pi Bot] Test Notification' + '" "' + 'This is a test notification!' + '"')
+            s.call('notify-send "' + '[Pi Bot] Test Notification' + '" "' + 'This is a test notification!' + '"')
         elif 'darwin' in current_os:
             mac_notify('[Pi Bot] Test Notification', "This is a test notification!")
         elif 'window' in current_os:
