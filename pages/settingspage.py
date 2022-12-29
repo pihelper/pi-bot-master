@@ -1,9 +1,9 @@
 import requests
 from PyQt5 import QtCore, QtGui, QtWidgets
-from win10toast import ToastNotifier
-
-from utils import return_data,write_data
+from plyer import notification
+from utils import return_data, write_data, mac_notify
 import sys,platform,settings
+import subprocess as s
 def no_abort(a, b, c):
     sys.__excepthook__(a, b, c)
 sys.excepthook = no_abort
@@ -172,7 +172,7 @@ class SettingsPage(QtWidgets.QWidget):
                     'notiffailed': self.notif_failed.isChecked()}
         write_data("./data/settings.json",settings)
         self.update_settings(settings)
-        QtWidgets.QMessageBox.information(self, "Bird Bot", "Saved Settings")
+        QtWidgets.QMessageBox.information(self, "Pi Bot", "Saved Settings")
 
     def update_settings(self,settings_data):
         global webhook, webhook_success, webhook_failed, webhook_cated, twocap_key,cap_key,notif_success, notif_captcha, notif_failed
@@ -184,12 +184,18 @@ class SettingsPage(QtWidgets.QWidget):
         r.post(self.webhook_edit.text(), json=test_data)
 
     def test_notif(self):
-        toast = ToastNotifier()
-        toast.show_toast('Pi Bot Test',
-                         'This is a test notification!',
-                         icon_path='icon.ico',
-                         duration=5,
-                         threaded=True)
+        current_os = platform.system().lower()
+        if 'linux' in current_os:
+            s.call(['notify-send', '[Pi Bot] Test Notification', "This is a test notification!"])
+        elif 'darwin' in current_os:
+            mac_notify('[Pi Bot] Test Notification', "This is a test notification!")
+        elif 'window' in current_os:
+            notification.notify(
+                title='[Pi Bot] Test Notification',
+                message='This is a test notification!',
+                app_icon='icon.ico',
+                timeout=5
+            )
 
 
 

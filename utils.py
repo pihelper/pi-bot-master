@@ -3,14 +3,13 @@ import os
 import platform
 import random
 import time
+import traceback
 from datetime import datetime
 from os.path import exists
 
+import subprocess as s
 import requests
 from colorama import init, Fore
-from win10toast import ToastNotifier
-
-toast = ToastNotifier()
 
 normal_color = Fore.CYAN
 e_key = "YnJ1aG1vbWVudA==".encode()
@@ -169,28 +168,62 @@ def get_captcha_two(url, sitekey):
                 else:
                     return r['request']
 
+def mac_notify(title, text):
+    os.system("""
+              osascript -e 'display notification "{}" with title "{}"'
+              """.format(text, title))
+
 def send_notif(item,mode):
-    try:
-        if mode == 'success':
-            toast.show_toast('[Pi Bot] Successful Checkout',
-                             f'Item bought: {item}',
-                             icon_path='icon.ico',
-                             duration=8,
-                             threaded=True)
-        elif mode == 'captcha':
-            toast.show_toast('[Pi Bot] Awaiting Captcha',
-                             f'Awaiting captcha for: {item}',
-                             icon_path='icon.ico',
-                             duration=15,
-                             threaded=True)
-        elif mode == 'fail':
-            toast.show_toast('[Pi Bot] Checkout Failed',
-                             f'Checkout failed on: {item}',
-                             icon_path='icon.ico',
-                             duration=8,
-                             threaded=True)
-    except:
-        print('Error sending notification (Most likely non Windows)')
+    current_os = platform.system().lower()
+    if 'linux' in current_os:
+        try:
+            if mode == 'success':
+                s.call(['notify-send', '[Pi Bot] Successful Checkout', f"Item bought: {item}"])
+            elif mode == 'captcha':
+                s.call(['notify-send', '[Pi Bot] Awaiting Captcha', f"Awaiting captcha for: {item}"])
+            elif mode == 'fail':
+                s.call(['notify-send', '[Pi Bot] Failed Checkout', f"Checkout failed on: {item}"])
+        except:
+            print(traceback.format_exc())
+            print('Error sending notification')
+    elif 'darwin' in current_os:
+        try:
+            if mode == 'success':
+                mac_notify('[Pi Bot] Successful Checkout', f"Item bought: {item}")
+            elif mode == 'captcha':
+                mac_notify('[Pi Bot] Awaiting Captcha', f'Awaiting captcha for: {item}')
+            elif mode == 'fail':
+                mac_notify('[Pi Bot] Failed Checkout', f'Checkout failed on: {item}')
+        except:
+            print(traceback.format_exc())
+            print('Error sending notification')
+    elif 'window' in current_os:
+        try:
+            from plyer import notification
+            if mode == 'success':
+                notification.notify(
+                    title= '[Pi Bot] Successful Checkout',
+                    message=f'Item bought: {item}',
+                    app_icon='icon.ico',
+                    timeout=8
+                )
+            elif mode == 'captcha':
+                notification.notify(
+                    title='[Pi Bot] Awaiting Captcha',
+                    message=f'Awaiting captcha for: {item}',
+                    app_icon='icon.ico',
+                    timeout=15
+                )
+            elif mode == 'fail':
+                notification.notify(
+                    title='[Pi Bot] Failed Checkout',
+                    message=f'Checkout failed on: {item}',
+                    app_icon='icon.ico',
+                    timeout=8
+                )
+        except:
+            print(traceback.format_exc())
+            print('Error sending notification')
 
 def get_country_code(country):
     for countries in return_data('./data/countries.json'):
