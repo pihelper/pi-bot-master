@@ -474,9 +474,9 @@ class TaskTab(QtWidgets.QWidget):
         self.delete_json()
         tasks_data = return_data("./data/tasks.json")
         task_data = {"task_id": self.task_id, "site": self.site, "product": self.product, "info": self.info, "size": self.size, "profile": self.profile,
-                     "proxies": self.proxies, "monitor_delay": self.monitor_delay, "error_delay": self.error_delay,"captcha_type":self.captcha_type, 'qty': self.qty}
+                     "proxies": self.proxies, "mode": self.mode, "monitor_delay": self.monitor_delay, "error_delay": self.error_delay,"captcha_type":self.captcha_type, 'qty': self.qty}
         tasks_data.append(task_data)
-        write_data("./data/tasks.json",tasks_data)
+        write_data("./data/tasks.json", tasks_data)
         self.edit_dialog.deleteLater()
 
     def delete_json(self):
@@ -487,7 +487,7 @@ class TaskTab(QtWidgets.QWidget):
                 break
         write_data("./data/tasks.json", tasks_data)
 
-    def delete(self,event):
+    def delete(self, event):
         tasks_total_count.setText(str(int(tasks_total_count.text()) - 1))
         self.delete_json()
         self.TaskTab.deleteLater()
