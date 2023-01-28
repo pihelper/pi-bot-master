@@ -642,9 +642,10 @@ class Shopsafe:
                     if self.settings['webhookfail']:
                         failed_web(r.url, self.image, f'{self.main_site}',  f"{self.title} / {self.size_label}",
                                    self.profile["profile_name"], "{:.2f}".format(price_to_use), checkout_time)
-
         else:
             # Other error checking out
+            print(submit.url)
+            print(submit.text.replace('\n', ''))
             price_to_use = int(self.price) / 100
             failed_web(submit.url, self.image, f'{self.main_site}',  f"{self.title} / {self.size_label}",
                        self.profile["profile_name"], "{:.2f}".format(price_to_use), 1)

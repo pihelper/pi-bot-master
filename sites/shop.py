@@ -189,7 +189,7 @@ class Shop:
                                         # If the variants "available" tag is true, it is in stock
                                         # This is how Pi Helper monitors these sites, by checking this tag on products!
                                         if vr['available']:
-                                            self.status_signal.emit({"msg": "Adding to cart", "status": "normal"})
+                                            #self.status_signal.emit({"msg": "Adding to cart", "status": "normal"})
                                             # Stores variant to 'variant' variable. Exits monitoring loop
                                             variant = vr['id']
                                             break
@@ -579,6 +579,7 @@ class Shop:
                                  "{:.2f}".format(price_to_use), checkout_time)
                 else:
                     # Checkout failed.
+                    print(traceback.format_exc())
                     self.status_signal.emit({"msg": "Checkout Failed", "status": "error"})
                     if self.settings['webhookfail']:
                         failed_web(r.url, self.image, f'{self.main_site}', self.product,
@@ -586,6 +587,7 @@ class Shop:
 
         else:
             # Other error checking out
+            print(traceback.format_exc())
             price_to_use = int(self.price) / 100
             failed_web(submit.url, self.image, f'{self.main_site}', self.product,
                        self.profile["profile_name"], "{:.2f}".format(price_to_use), 'N/A')

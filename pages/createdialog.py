@@ -2,11 +2,6 @@ import json
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 import sys,platform
-
-from sites.site_keys import chigaco_items, vilros_items, pihut_items, sbc_items, cool_items, pimoroni_items, pi3g_items, \
-    ameri_items, envistia_items
-
-
 def no_abort(a, b, c):
     sys.__excepthook__(a, b, c)
 sys.excepthook = no_abort
@@ -15,7 +10,6 @@ pi_sites = {'PiShop (US)' : 'https://www.pishop.us/',
                          'Sparkfun': 'https://www.sparkfun.com/',
                          'OKDO': 'https://www.odko.com/',
                          'Adafruit': 'https://www.adafruit.com'}
-
 
 def get_shopify_url(name):
     return pi_sites[name]
@@ -27,7 +21,7 @@ class CreateDialog(QtWidgets.QDialog):
         self.show()
     def setupUi(self, CreateDialog):
         self.CreateDialog = CreateDialog
-        CreateDialog.setFixedSize(647, 160)
+        CreateDialog.setFixedSize(647, 200)
         CreateDialog.setStyleSheet("QComboBox::drop-down {    border: 0px;}QComboBox::down-arrow {    image: url(:/images/down_icon.png);    width: 14px;    height: 14px;}QComboBox{    padding: 1px 0px 1px 3px;}QLineEdit:focus {   border: none;   outline: none;} QSpinBox::up-button {subcontrol-origin: border;subcontrol-position: top right;width: 8px; border-image: url(:/images/uparrow_icon.png) 1;border-width: 1px;}QSpinBox::down-button {subcontrol-origin: border;subcontrol-position: bottom right;width: 8px;border-image: url(:/images/downarrow_icon.png) 1;border-width: 1px;border-top-width: 0;}")
         CreateDialog.setWindowTitle("Create Tasks")
 
@@ -310,7 +304,6 @@ class CreateDialog(QtWidgets.QDialog):
         self.shopify_select.clear()
         self.addtask_btn.setGeometry(QtCore.QRect(250, 110, 151, 32))
         self.refresh_button.setGeometry(QtCore.QRect(50, 110, 151, 32))
-        self.CreateDialog.setFixedSize(647, 160)
 
         self.monitor_label.setGeometry(QtCore.QRect(500, 84, 151, 21))
         self.error_label.setGeometry(QtCore.QRect(512, 114, 151, 21))
@@ -349,7 +342,6 @@ class CreateDialog(QtWidgets.QDialog):
             self.qty_label.setVisible(True)
             self.captcha_box.setVisible(False)
             self.link.setPlaceholderText('Sparkfun PID')
-            self.CreateDialog.setFixedSize(647, 175)
             self.addtask_btn.setGeometry(QtCore.QRect(250, 125, 151, 32))
             self.refresh_button.setGeometry(QtCore.QRect(50, 125, 151, 32))
             self.monitor_label.setGeometry(QtCore.QRect(500, 99, 151, 21))
@@ -378,7 +370,6 @@ class CreateDialog(QtWidgets.QDialog):
             self.captcha_box.setVisible(False)
             self.size_edit.setVisible(True)
             self.link.setPlaceholderText('Base Shopify URL')
-            self.CreateDialog.setFixedSize(647, 175)
             self.addtask_btn.setGeometry(QtCore.QRect(250, 125, 151, 32))
             self.refresh_button.setGeometry(QtCore.QRect(50, 125, 151, 32))
             self.monitor_label.setGeometry(QtCore.QRect(500, 109, 151, 21))
