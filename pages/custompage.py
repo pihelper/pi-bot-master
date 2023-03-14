@@ -226,6 +226,7 @@ class CustomPage(QtWidgets.QWidget):
         self.custom_header.setText("Custom Items")
 
         self.status_signal = QtCore.pyqtSignal("PyQt_PyObject")
+        self.size_select.activated.connect(self.size_press)
 
     def load_custom_sites(self):
         base_sites = json.loads(open('./data/base_items.json', 'r').read())
@@ -395,4 +396,7 @@ class CustomPage(QtWidgets.QWidget):
             self.item_status.setText('Item not found')
     def update_label(self, word):
         self.custom_header.setText(f"Custom Items [{word}]")
+
+    def size_press(self):
+        self.size_edit.setText(self.size_select.currentText())
 

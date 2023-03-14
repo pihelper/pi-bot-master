@@ -23,7 +23,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setupUi(self)
         self.show()
     def setupUi(self, MainWindow):
-        self.version ='1.1'
+        self.version ='1.2'
         MainWindow.setFixedSize(1109, 600)
         MainWindow.setStyleSheet("background-color: #1E1E1E;")
         MainWindow.setWindowTitle(f"Pi Bot - Version {self.version}")
@@ -124,18 +124,6 @@ class MainWindow(QtWidgets.QMainWindow):
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
         self.set_functions()
 
-    sparkfun_harvester = Harvester()
-    spark_token = sparkfun_harvester.intercept_recaptcha_v2(
-        domain='www.sparkfun.com',
-        sitekey='6LdC6DsUAAAAACOuFFkjQ5ICxIZHrq1XhvlpzXTd')
-    server_thread = Thread(target=sparkfun_harvester.serve, daemon=True).start()
-    spark_started = False
-
-    pishop_harvester = Harvester('127.0.0.1', 5001)
-    pishop_token = pishop_harvester.intercept_recaptcha_v2(domain='www.pishop.us',sitekey='6LcjX0sbAAAAACp92-MNpx66FT4pbIWh-FTDmkkz')
-    pishop_server = Thread(target=pishop_harvester.serve, daemon=True).start()
-    pishop_started = False
-
     def set_functions(self):
         self.current_page = "home"
         self.home_tab.mousePressEvent = lambda event: self.change_page(event,"home")
@@ -163,34 +151,44 @@ class MainWindow(QtWidgets.QMainWindow):
             product = self.createdialog.link.text()
             size = ''
             info = self.createdialog.link.text()
+            profile = self.createdialog.profile_box.currentText()
+
         elif 'Sparkfun' in site:
             product = self.createdialog.link.text()
             size = f'{self.createdialog.account_user.text()}|{self.createdialog.account_pass.text()}'
             info = self.createdialog.link.text()
+            profile = self.createdialog.account_box.currentText()
+
         elif 'OKDO' in site:
             product = self.createdialog.link.text()
             size = ''
             info = self.createdialog.link.text()
+            profile = self.createdialog.profile_box.currentText()
+
         elif 'Adafruit' in site:
             product = self.createdialog.link.text()
             size = ''
             info = self.createdialog.link.text()
+            profile = self.createdialog.account_box.currentText()
         elif 'Shopify Drop' in site:
             product = self.createdialog.info_edit.text()
             size = self.createdialog.size_edit.text()
             info = self.createdialog.link.text()
+            profile = self.createdialog.profile_box.currentText()
+
         else:
             product = self.createdialog.shopify_select.currentText()
             size = self.createdialog.base_items[site]['items'][product]
             info = self.createdialog.base_items[site]['site']
             mode = self.createdialog.mode_box.currentText()
+            profile = self.createdialog.profile_box.currentText()
+
         captcha_type = self.createdialog.captcha_box.currentText()
-        profile = self.createdialog.profile_box.currentText()
         proxies = self.createdialog.proxies_box.currentText()
         monitor_delay = self.createdialog.monitor_edit.text()
         error_delay = self.createdialog.error_edit.text()
         qty = self.createdialog.qty_spinbox.value()
-        if site != "Site" and product != "" and profile != "Profile":
+        if site != "Site" and product != "" and profile != "Profile" and profile != 'Account':
             for i in range(self.createdialog.taskcount_spinbox.value()):
                 self.homepage.verticalLayout.takeAt(self.homepage.verticalLayout.count()-1)
                 tab = TaskTab(

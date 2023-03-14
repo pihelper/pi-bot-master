@@ -7,7 +7,8 @@ from sites.shop import Shop
 from pages.createdialog import CreateDialog
 from sites.shopsafe import Shopsafe
 from sites.sparkfun import Sparkfun
-from utils import get_profile, PiLogger, return_data, write_data, get_proxy_list, create_settings, create_custom
+from utils import get_profile, PiLogger, return_data, write_data, get_proxy_list, create_settings, create_custom, \
+    get_account_profile, create_accounts
 import urllib.request,sys,platform
 
 def no_abort(a, b, c):
@@ -20,6 +21,7 @@ class HomePage(QtWidgets.QWidget):
         self.setupUi(self)
         create_settings()
         create_custom()
+        create_accounts()
         self.load_tasks()
     def setupUi(self, homepage):
         global tasks
@@ -227,7 +229,6 @@ class HomePage(QtWidgets.QWidget):
 
         from app import MainWindow
         MainWindow.spark_started = False
-        MainWindow.pishop_started = False
 
     def delete_all_tasks(self):
         for task in self.tasks:
@@ -381,7 +382,7 @@ class TaskTab(QtWidgets.QWidget):
             self.start_btn.raise_()
             checkouts_count.setText(str(int(checkouts_count.text())+1))
         elif msg["status"] == "carted":
-            self.status_label.setStyleSheet("color: rgb(163, 149, 255);")
+            self.status_label.setStyleSheet("color: rgb(255, 255, 255);")
             logger.alt(self.task_id,msg["msg"])
             carted_count.setText(str(int(carted_count.text())+1))
 
@@ -423,7 +424,6 @@ class TaskTab(QtWidgets.QWidget):
         self.start_btn.raise_()
         from app import MainWindow
         MainWindow.spark_started = False
-        MainWindow.pishop_started = False
 
 
     def edit(self,event):
@@ -434,8 +434,11 @@ class TaskTab(QtWidgets.QWidget):
         self.edit_dialog.profile_box.clear()
         self.edit_dialog.proxies_box.clear()
         profile_combobox = self.parent().parent().parent().parent().parent().parent().parent().createdialog.profile_box
+        account_combobox = self.parent().parent().parent().parent().parent().parent().parent().createdialog.account_box
         for profile in [profile_combobox.itemText(i) for i in range(profile_combobox.count())]:
             self.edit_dialog.profile_box.addItem(profile)
+        for account in [account_combobox.itemText(i) for i in range(account_combobox.count())]:
+            self.edit_dialog.profile_box.addItem(account)
         proxies_combobox = self.parent().parent().parent().parent().parent().parent().parent().createdialog.proxies_box
         for proxy in [proxies_combobox.itemText(i) for i in range(proxies_combobox.count())]:
             self.edit_dialog.proxies_box.addItem(proxy)
@@ -451,20 +454,28 @@ class TaskTab(QtWidgets.QWidget):
             self.product = self.edit_dialog.link.text()
             self.info = self.edit_dialog.link.text()
             self.size = f'{self.edit_dialog.account_user.text()}|{self.edit_dialog.account_pass.text()}'
-        elif 'PiShop' in self.site or 'OKDO' in self.site or 'Adafruit' in self.site:
+            self.profile = self.edit_dialog.account_box.currentText()
+        elif 'Adafruit' in self.site:
             self.product = self.edit_dialog.link.text()
             self.info = self.edit_dialog.link.text()
             self.size = ''
+            self.profile = self.edit_dialog.account_box.currentText()
+        elif 'PiShop' in self.site or 'OKDO' in self.site:
+            self.product = self.edit_dialog.link.text()
+            self.info = self.edit_dialog.link.text()
+            self.size = ''
+            self.profile = self.edit_dialog.profile_box.currentText()
         elif 'Shopify Drop' in self.site:
             self.product = self.edit_dialog.info_edit.text()
             self.info = self.edit_dialog.link.text()
             self.size = self.edit_dialog.size_edit.text()
+            self.profile = self.edit_dialog.profile_box.currentText()
         else:
             self.product=self.edit_dialog.shopify_select.currentText()
             self.info = self.info_label.text()
             self.size = self.size_label.text()
             self.mode = self.edit_dialog.mode_box.currentText()
-        self.profile=self.edit_dialog.profile_box.currentText()
+            self.profile=self.edit_dialog.profile_box.currentText()
         self.proxies=self.edit_dialog.proxies_box.currentText()
         self.monitor_delay = self.edit_dialog.monitor_edit.text()
         self.error_delay = self.edit_dialog.error_edit.text()
@@ -502,7 +513,8 @@ class TaskThread(QtCore.QThread):
         self.task_id,self.site,self.product,self.info,self.size,self.profile,self.proxies,self.mode, self.monitor_delay,self.error_delay, self.captcha_type, self.qty = task_id,site,product,info,size,profile,proxies,mode,monitor_delay,error_delay,captcha_type, qty
 
     def run(self):
-        profile,proxy = get_profile(self.profile),get_proxy_list(self.proxies)
+        profile = get_profile(self.profile) if self.site.lower() not in ['adafruit', 'sparkfun'] else get_account_profile(str(self.site), self.profile)
+        proxy = get_proxy_list(self.proxies)
         if profile == None:
             self.status_signal.emit({"msg":"Invalid profile","status":"error"})
             return
@@ -513,13 +525,7 @@ class TaskThread(QtCore.QThread):
             PiShop(self.task_id, self.status_signal, self.product_signal, self.product, self.info, self.size, profile,
                  proxy, self.monitor_delay, self.error_delay,self.captcha_type, self.qty)
         elif 'Sparkfun' in self.site:
-            account_info = self.size.split('|')
-            if account_info[0] == '':
-                self.status_signal.emit({"msg": "Email field empty", "status": "error"})
-            elif account_info[1] == '':
-                self.status_signal.emit({"msg": "Password field empty", "status": "error"})
-            else:
-                Sparkfun(self.task_id, self.status_signal, self.product_signal, self.product, self.size, profile,
+            Sparkfun(self.task_id, self.status_signal, self.product_signal, self.product, self.size, profile,
                    proxy, self.monitor_delay, self.error_delay, self.captcha_type,self.qty)
         elif 'OKDO' in self.site:
             Okdo(self.task_id, self.status_signal, self.product_signal, self.product, self.info, self.size, profile,

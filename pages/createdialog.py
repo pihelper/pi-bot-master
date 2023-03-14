@@ -66,20 +66,20 @@ class CreateDialog(QtWidgets.QDialog):
         self.size_edit.setFont(font)
         self.size_edit.setVisible(False)
 
+        self.profile_box = QtWidgets.QComboBox(self.background)
+        self.profile_box.setGeometry(QtCore.QRect(50, 55, 151, 21))
+        self.profile_box.setStyleSheet("outline: 0;border: 1px solid #60a8ce;border-width: 0 0 2px;color: rgb(234, 239, 239);")
+        self.profile_box.addItem("Profile")
+        self.profile_box.setFont(font)
+
         self.account_box = QtWidgets.QComboBox(self.background)
-        self.account_box.setGeometry(QtCore.QRect(50, 120, 151, 21))
+        self.account_box.setGeometry(QtCore.QRect(50, 55, 151, 21))
         self.account_box.setStyleSheet(
             "outline: 0;border: 1px solid #60a8ce;border-width: 0 0 2px;color: rgb(234, 239, 239);")
         self.account_box.addItem("Account")
         self.account_box.setFont(font)
         self.account_box.setVisible(False)
 
-
-        self.profile_box = QtWidgets.QComboBox(self.background)
-        self.profile_box.setGeometry(QtCore.QRect(50, 55, 151, 21))
-        self.profile_box.setStyleSheet("outline: 0;border: 1px solid #60a8ce;border-width: 0 0 2px;color: rgb(234, 239, 239);")
-        self.profile_box.addItem("Profile")
-        self.profile_box.setFont(font)
         self.proxies_box = QtWidgets.QComboBox(self.background)
         self.proxies_box.setGeometry(QtCore.QRect(250, 55, 151, 21))
         self.proxies_box.setStyleSheet("outline: 0;border: 1px solid #60a8ce;border-width: 0 0 2px;color: rgb(234, 239, 239);")
@@ -229,13 +229,21 @@ class CreateDialog(QtWidgets.QDialog):
             else:
                 for it in self.custom_items[item]['items']:
                     self.base_items[item]['items'][it] = self.custom_items[item]['items'][it]
-        site_list = ['Adafruit', 'OKDO', 'PiShop (US)', 'Sparkfun', 'Shopify Drop']
+        site_list = ['Adafruit', 'OKDO', 'PiShop', 'Sparkfun', 'Shopify Drop']
         for site in self.base_items:
             if site not in site_list:
                 site_list.append(site)
         site_list.sort(key=str.lower)
         self.site_box.addItems(site_list)
         self.on_site_click()
+    def load_accounts(self):
+        if 'adafruit' in self.site_box.currentText().lower() or 'sparkfun' in self.site_box.currentText().lower():
+            self.account_box.clear()
+            self.account_box.addItem('Account')
+            f = open('./data/accounts.txt','r')
+            for acc in f.readlines():
+                if acc.split('|')[0].lower() == self.site_box.currentText().lower():
+                    self.account_box.addItem(acc.split('|')[1])
     def load_data(self, task_tab):
         self.site_box.setCurrentText(task_tab.site)
         self.site_box.setEditable(False)
@@ -312,12 +320,14 @@ class CreateDialog(QtWidgets.QDialog):
         self.monitor_edit.setGeometry(QtCore.QRect(585, 85, 25, 21))
         self.error_edit.setGeometry(QtCore.QRect(585, 115, 25, 21))
         self.taskcount_spinbox.setGeometry(QtCore.QRect(420, 115, 41, 21))
-
+        self.account_box.setVisible(False)
+        self.profile_box.setVisible(True)
         self.account_user.setVisible(False)
         self.account_pass.setVisible(False)
         self.mode_box.setVisible(False)
         self.size_edit.setVisible(False)
         self.info_edit.setVisible(False)
+        self.load_accounts()
         if 'PiShop' in self.site_box.currentText():
             self.info_edit.setVisible(False)
             self.shopify_select.setVisible(False)
@@ -327,6 +337,8 @@ class CreateDialog(QtWidgets.QDialog):
             self.captcha_box.setVisible(True)
             self.link.setPlaceholderText('Product Link')
         elif 'Adafruit' in self.site_box.currentText():
+            self.account_box.setVisible(True)
+            self.profile_box.setVisible(False)
             self.info_edit.setVisible(False)
             self.shopify_select.setVisible(False)
             self.link.setVisible(True)
@@ -335,6 +347,8 @@ class CreateDialog(QtWidgets.QDialog):
             self.captcha_box.setVisible(False)
             self.link.setPlaceholderText('Adafruit Link')
         elif 'Sparkfun' in self.site_box.currentText():
+            self.account_box.setVisible(True)
+            self.profile_box.setVisible(False)
             self.info_edit.setVisible(False)
             self.shopify_select.setVisible(False)
             self.link.setVisible(True)
@@ -351,8 +365,6 @@ class CreateDialog(QtWidgets.QDialog):
             self.monitor_edit.setGeometry(QtCore.QRect(585, 100, 25, 21))
             self.error_edit.setGeometry(QtCore.QRect(585, 130, 25, 21))
             self.taskcount_spinbox.setGeometry(QtCore.QRect(420, 130, 41, 21))
-            self.account_user.setVisible(True)
-            self.account_pass.setVisible(True)
         elif 'OKDO' in self.site_box.currentText():
             self.info_edit.setVisible(False)
             self.shopify_select.setVisible(False)
