@@ -31,6 +31,7 @@ class PiLogger:
         print(Fore.RED + "[{}][TASK {}] {}".format(self.ts(),task_id,msg))
     def success(self,task_id,msg):
         print(Fore.GREEN + "[{}][TASK {}] {}".format(self.ts(),task_id,msg))
+
 def return_data(path):
     if not exists(path):
         check_file = open(path, "a+")
@@ -69,6 +70,17 @@ def create_custom():
                 default_settings[site] = {'site': sites[site]['site'], 'items': {}}
             json.dump(default_settings, file)
         file.close()
+
+def create_accounts():
+    # Checks for data directory, creates if not there
+    dir_path = './data/'
+    if not os.path.exists(dir_path):
+        os.makedirs(dir_path)
+    path = './data/accounts.txt'
+    if not exists(path):
+        check_file = open(path, "x")
+        check_file.close()
+
 def create_settings():
     # Checks for data directory, creates if not there
     dir_path = './data/'
@@ -86,6 +98,18 @@ def get_profile(profile_name):
     profiles = return_data("./data/profiles.json")
     for p in profiles:
         if p["profile_name"] == profile_name:
+            try:
+                return p
+            except ValueError:
+                pass
+            return p
+    return None
+
+def get_account_profile(site, email):
+    profiles = open('./data/accounts.txt','r')
+    for p in profiles.readlines():
+        print(p)
+        if p.split('|')[0] == site.lower() and p.split('|')[1] == email:
             try:
                 return p
             except ValueError:
