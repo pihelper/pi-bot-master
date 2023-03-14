@@ -11,8 +11,7 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 
 from utils import return_data, format_proxy, load_session, save_session, delete_session, get_country_code
-from webhook import good_web, failed_web, cart_web
-
+from webhook import new_web
 
 class Shopsafe:
     def __init__(self, task_id, status_signal, product_signal, product, info, size, profile, proxy, monitor_delay, error_delay, qty):
@@ -193,6 +192,8 @@ class Shopsafe:
                 cart_form[str(prop.get('name'))] = str(prop.get('value'))
         self.status_signal.emit({"msg": "Adding to cart", "status": "normal"})
         url_to_post = f'{self.main_site}cart/add.js'
+        if self.settings['webhookcart']:
+            new_web('carted', f"Shopify Drop - {self.main_site}", self.image, self.title, self.profile['profile_name'])
         self.session.post(url_to_post, data=cart_form, headers=self.request_headers(self.main_site))
         # We send the cart data to the cart url
         self.start = time.time()
@@ -401,7 +402,7 @@ class Shopsafe:
                     x.update({'checkout[shipping_address][province]': state})
                 self.status_signal.emit({"msg": "Submitting Shipping Info", "status": "normal"})
                 # Sends data to appropriate URL.
-                self.session.post(self.main_url,data=x, headers=self.request_headers(self.main_url + '?step=contact_information'))
+                self.session.post(self.main_url, data=x, headers=self.request_headers(self.main_url + '?step=contact_information'))
                 return
             except:
                 self.status_signal.emit({"msg": "Error Submitting Shipping", "status": "error"})
@@ -606,15 +607,15 @@ class Shopsafe:
                 # This means the checkout was unsuccessful.
                 price_to_use = int(self.price)/100
                 self.status_signal.emit({"msg": "Checkout Failed", "status": "error"})
-                failed_web(after.url,self.image,f'{self.main_site}', f"{self.title} / {self.size_label}",self.profile["profile_name"], "{:.2f}".format(price_to_use),checkout_time)
+                if self.settings['webhookfailed']:
+                    new_web('failed', f"Shopify Drop - {self.main_site}", self.image, self.title, profile['profile_name'], price=price_to_use, checkout_time=checkout_time)
 
             elif 'thank_you' in after.url:
                 # This means the checkout was successful.
                 price_to_use = int(self.price)/100
                 self.status_signal.emit({"msg": "Successful Checkout", "status": "success"})
-                good_web(after.url, self.image, f'{self.main_site}',
-                         f"{self.title} / {self.size_label}", self.profile["profile_name"],
-                       "{:.2f}".format(price_to_use),checkout_time)
+                if self.settings['webhooksuccess']:
+                    new_web('success', f"Shopify Drop - {self.main_site}", self.image, self.title, profile['profile_name'], price=price_to_use,  checkout_time=checkout_time)
 
             else:
                 # Sometimes there can be weird URLs after submitting order.
@@ -633,22 +634,23 @@ class Shopsafe:
                 if 'order' in r.url or 'thank_you' in r.url:
                     self.status_signal.emit({"msg": "Successful Checkout", "status": "success"})
                     if self.settings['webhooksuccess']:
-                        good_web(r.url, self.image, f'{self.main_site}',
-                                 f"{self.title} / {self.size_label}", self.profile["profile_name"],
-                                 "{:.2f}".format(price_to_use), checkout_time)
+                        new_web('success', f"Shopify Drop - {self.main_site}", self.image, self.title,
+                                profile['profile_name'], price=price_to_use, checkout_time=checkout_time)
+
                 else:
                     # Checkout failed.
                     self.status_signal.emit({"msg": "Checkout Failed", "status": "error"})
                     if self.settings['webhookfail']:
-                        failed_web(r.url, self.image, f'{self.main_site}',  f"{self.title} / {self.size_label}",
-                                   self.profile["profile_name"], "{:.2f}".format(price_to_use), checkout_time)
+                        new_web('failed', f"Shopify Drop - {self.main_site}", self.image, self.title,
+                                profile['profile_name'], price=price_to_use, checkout_time=checkout_time)
+
         else:
             # Other error checking out
             print(submit.url)
             print(submit.text.replace('\n', ''))
             price_to_use = int(self.price) / 100
-            failed_web(submit.url, self.image, f'{self.main_site}',  f"{self.title} / {self.size_label}",
-                       self.profile["profile_name"], "{:.2f}".format(price_to_use), 1)
+            new_web('failed', f"Shopify Drop - {self.main_site}", self.image, self.title, profile['profile_name'])
+
     def handle_checkpoint(self, url):
         self.driver.get(url)
         while 'checkouts/' not in self.driver.current_url:
@@ -671,7 +673,7 @@ class Shopsafe:
                     self.status_signal.emit({"msg": "Navigate to checkout", "status": "alt"})
                     while 'checkouts/' not in self.driver.current_url:
                         time.sleep(0.5)
-
+        time.sleep(1.5)
         self.browser_to_session()
         self.main_url = self.driver.current_url
 
