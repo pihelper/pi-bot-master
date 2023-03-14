@@ -2,14 +2,17 @@ import json
 import logging
 import random
 import time
+import traceback
+
 import requests
 from bs4 import BeautifulSoup
 from selenium import webdriver
+from selenium.webdriver import DesiredCapabilities
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
 
 from utils import return_data, send_notif, format_proxy, load_session, save_session
-from webhook import failed_spark_web, good_spark_web, cart_web
-
+from webhook import new_web
 
 class Sparkfun:
     def __init__(self, task_id, status_signal, product_signal, product, size, profile, proxy, monitor_delay, error_delay,captcha_type, qty):
@@ -26,13 +29,14 @@ class Sparkfun:
         self.token = ''
         self.current = ''
         self.price = ''
-
+        self.user = self.profile.split('|')[1]
+        self.pw = self.profile.split('|')[2]
+        self.phone = self.profile.split('|')[3]
         self.shipping_address = {}
         self.billing_address = {}
         self.address_validate = {}
         self.address_id = ''
-        account_info = str(self.size).split('|')
-        self.get_session(account_info[0], account_info[1])
+        self.get_session()
         self.get_address()
         self.get_item()
         self.atc()
@@ -81,20 +85,22 @@ class Sparkfun:
         ind = html.index(sub)
         to_parse = html[ind + len(sub)::]
         return to_parse.split('"')[1]
+
     def get_price_new(self,html):
         soup = BeautifulSoup(html, 'html.parser')
         return soup.find('input', {'name': 'total_price'}).get('value')
+
     def get_sparkrev(self, html):
         hey = 'sparkrev: '
         ind = html.index(hey)
         to_parse = html[ind::]
         return to_parse.split("'")[1]
 
-    def get_session(self, user, passwd):
+    def get_session(self):
         self.status_signal.emit({"msg": "Checking for session", "status": "normal"})
-        session = load_session(user, 'https://www.sparkfun.com/')
+        session = load_session(self.user, 'https://www.sparkfun.com/')
         if session == False:
-            self.req_login(user,passwd)
+            self.browser_login()
         else:
             for cookies in session[0]:
                 self.session.cookies.set(cookies, session[0][cookies])
@@ -102,38 +108,44 @@ class Sparkfun:
             account_get = self.session.get('https://www.sparkfun.com/account/')
             if 'login' in account_get.url:
                 self.status_signal.emit({"msg": "Session no longer valid", "status": "normal"})
-                self.req_login(user,passwd)
+                self.browser_login()
             else:
                 self.status_signal.emit({"msg": "Valid session found!", "status": "normal"})
 
-    def req_login(self, user, passwd):
-        self.status_signal.emit({"msg": "Getting auth", "status": "normal"})
-        token = self.get_checkout_token(self.session.get('https://www.sparkfun.com/account/login').text)
-        logging.getLogger('harvester').setLevel(logging.CRITICAL)
-        self.status_signal.emit({"msg": "Awaiting captcha", "status": "normal"})
-        try:
-            from app import MainWindow
-            if not MainWindow.spark_started:
-                MainWindow.spark_started = True
-                MainWindow.sparkfun_harvester.launch_browser()
-            while True:
-                # block until we get sent a captcha token and repeat
-                captcha = MainWindow.sparkfun_harvester.get_token_queue('www.sparkfun.com').get()
+    def browser_login(self):
+        self.status_signal.emit({"msg": "Awaiting browser login", "status": "alt"})
+        caps = DesiredCapabilities().CHROME
+        caps["pageLoadStrategy"] = 'eager'
+        options = Options()
+        options.add_argument("window-size=1920,1080")
+        options.add_argument('enable-automation')
+        options.add_argument('--no-sandbox')
+        options.add_argument('--disable-dev-shm-usage')
+        options.add_argument('--disable-browser-side-navigation')
+        options.add_argument('--disable-gpu')
+        options.add_argument('log-level=3')
+        options.add_experimental_option("excludeSwitches", ["enable-automation"])
+        options.add_experimental_option('useAutomationExtension', False)
+        options.add_argument('disable-infobars')
+        driver = webdriver.Chrome(options=options, desired_capabilities=caps)
+        # Loads base URL
+        driver.get('https://www.sparkfun.com/account/login')
+        driver.find_element(By.CSS_SELECTOR, '#login_user').send_keys(self.user)
+        driver.find_element(By.CSS_SELECTOR, '#login_password').send_keys(self.pw)
 
-                self.status_signal.emit({"msg": "Logging in", "status": "normal"})
-                data = {'csrf_token': token, 'redirect': '/', 'user': user, 'passwd': passwd,
-                        'g-recaptcha-response': captcha}
-                self.session.post('https://www.sparkfun.com/account/login', data=data)
-                if self.check_session():
-                    self.status_signal.emit({"msg": "Valid login session found", "status": "normal"})
-                    save_session(user, 'https://www.sparkfun.com/', self.session)
-                    break
-                else:
-                    self.status_signal.emit({"msg": "Login failed! Check credentials", "status": "error"})
-            MainWindow.spark_started = False
-        except KeyboardInterrupt:
-            pass
+        while 'account/login' in driver.current_url:
+            time.sleep(0.1)
 
+        for cookie in driver.get_cookies():
+            self.session.cookies.update({cookie['name']: cookie['value']})
+
+        driver.close()
+
+        if self.check_session():
+            self.status_signal.emit({"msg": "Valid login session found", "status": "normal"})
+            save_session(self.user, 'https://www.sparkfun.com/', self.session)
+        else:
+            self.status_signal.emit({"msg": "Login failed! Check credentials", "status": "error"})
 
     def check_session(self):
         session_check = self.session.get('https://www.sparkfun.com/account')
@@ -148,9 +160,10 @@ class Sparkfun:
             self.address_id = address_url.split("/")[-1]
             self.status_signal.emit({"msg": "Loading Address", "status": "normal"})
             address_json = self.session.get(f'{address_url}.json').json()
+            print(address_json)
             for value in address_json:
-                self.shipping_address[f'shipping_address[entry_{value if value != "country" else "country_id"}]'] = address_json[value] if value != 'zone' else self.get_shipping_zone()
-                self.billing_address[f'billing_address[entry_{value if value != "country" else "country_id"}]'] = address_json[value] if value != 'zone' else self.get_shipping_zone()
+                self.shipping_address[f'shipping_address[entry_{value if value != "country" else "country_id"}]'] = address_json[value] if value != 'zone' else self.get_shipping_zone(address_json[value])
+                self.billing_address[f'billing_address[entry_{value if value != "country" else "country_id"}]'] = address_json[value] if value != 'zone' else self.get_shipping_zone(address_json[value])
                 self.address_validate[f'address[{value if value != "country" else "country_id"}]'] = address_json[value]
             self.address_validate['address[po_box]'] = False
             self.address_validate['address[state]'] = self.address_validate['address[zone]']
@@ -182,9 +195,10 @@ class Sparkfun:
                     r = self.session.post('https://www.sparkfun.com/cart/add.json', data=cart_add)
                     if r.json()['success']:
                         self.status_signal.emit({"msg": "Carted!", "status": "carted"})
+
                         if self.settings['webhookcart']:
-                            cart_web(f'https://www.sparkfun.com/products/{self.product}', self.image, 'Sparkfun', self.name,
-                                     self.profile['profile_name'])
+                            new_web('carted', 'Sparkfun', self.image, self.name, self.user)
+                        self.start_time = time.time()
                         break
                     elif 'cannot be backordered' in str(r.json()['message']):
                         self.status_signal.emit({"msg": "OOS on cart", "status": "error"})
@@ -197,6 +211,7 @@ class Sparkfun:
                 time.sleep(float(self.monitor_delay))
             except Exception:
                 self.status_signal.emit({"msg": "Error on monitor", "status": "error"})
+                print(traceback.format_exc())
                 time.sleep(float(self.error_delay))
 
     def go_to_shipping(self):
@@ -207,8 +222,6 @@ class Sparkfun:
             self.token = self.get_checkout_token(r.text)
 
     def submit_shipping(self):
-        #self.status_signal.emit({"msg": "Validating Address", "status": "normal"})
-        #self.session.post('https://www.sparkfun.com/orders/validate_address', data=self.address_validate)
         self.status_signal.emit({"msg": "Setting Address", "status": "normal"})
         self.session.post('https://www.sparkfun.com/orders/set_shipping_address',data=self.address_validate)
         self.status_signal.emit({"msg": "Posting Shipping Methods", "status": "normal"})
@@ -229,9 +242,7 @@ class Sparkfun:
         elif 'Please fix the errors below' in submit.text:
             self.status_signal.emit({"msg": "Error submitting shipping (OOS)", "status": "error"})
             if self.settings['webhookfailed']:
-                failed_spark_web(f'https://www.sparkfun.com/products/{str(self.product)}', self.image,
-                                 'Sparkfun',
-                                 self.name, self.profile["profile_name"])
+                new_web('failed', 'Sparkfun', self.image, self.name, self.user)
             self.atc()
             self.go_to_shipping()
             self.submit_shipping()
@@ -239,9 +250,7 @@ class Sparkfun:
         else:
             self.status_signal.emit({"msg": "Error submitting shipping (Other)", "status": "error"})
             if self.settings['webhookfailed']:
-                failed_spark_web(f'https://www.sparkfun.com/products/{str(self.product)}', self.image,
-                                 'Sparkfun',
-                                 self.name, self.profile["profile_name"])
+                new_web('failed', 'Sparkfun', self.image, self.name, self.user)
             self.atc()
             self.go_to_shipping()
             self.submit_shipping()
@@ -250,7 +259,7 @@ class Sparkfun:
     def submit_order_fast(self):
         self.billing_address['csrf_token'] = self.token
         self.billing_address['total_price'] = self.price
-        self.billing_address['customers_telephone'] = self.profile['billing_phone']
+        self.billing_address['customers_telephone'] = self.phone
         self.billing_address['payment_methods_id'] = '3'
         self.billing_address['billing_address[address_select_dropdown]'] = self.address_id
         self.status_signal.emit({"msg": "Submitting payment", "status": "normal"})
@@ -260,20 +269,17 @@ class Sparkfun:
         create = self.session.post('https://www.sparkfun.com/orders/create', data=order_data)
 
         # On successful checkout, you will be redirected to https://www.sparkfun.com/orders/index
+        end_time = time.time() - self.start_time
         if 'index' in create.url:
             self.status_signal.emit({"msg": "Successful Checkout", "status": "success"})
             if self.settings['webhooksuccess']:
-                good_spark_web(f'https://www.sparkfun.com/products/{str(self.product)}', self.image,
-                               'Sparkfun',
-                               self.name, self.profile["profile_name"])
+                new_web('success', 'Sparkfun', self.image, self.name, self.user, checkout_time=end_time)
             if self.settings['notifsuccess']:
                 send_notif(self.name, 'success')
         else:
             self.status_signal.emit({"msg": "Checkout Failed", "status": "error"})
             if self.settings['webhookfailed']:
-                failed_spark_web(f'https://www.sparkfun.com/products/{str(self.product)}', self.image,
-                                 'Sparkfun',
-                                 self.name, self.profile["profile_name"])
+                new_web('failed', 'Sparkfun', self.image, self.name, self.user, checkout_time=end_time)
             if self.settings['notiffailed']:
                 send_notif(self.name, 'fail')
 
@@ -286,10 +292,10 @@ class Sparkfun:
         cheapest_method = methods[len(methods) - 1]
         return cheapest_method[cheapest_method.rfind("_") + 1:].replace('\\','')
 
-    def get_shipping_zone(self):
+    def get_shipping_zone(self, state):
         zones = [{"id":1,"name":"Alabama","code":"AL"},{"id":2,"name":"Alaska","code":"AK"},{"id":3,"name":"American Samoa","code":"AS"},{"id":4,"name":"Arizona","code":"AZ"},{"id":5,"name":"Arkansas","code":"AR"},{"id":6,"name":"Armed Forces Africa","code":"AF"},{"id":7,"name":"Armed Forces Americas","code":"AA"},{"id":8,"name":"Armed Forces Canada","code":"AC"},{"id":9,"name":"Armed Forces Europe","code":"AE"},{"id":10,"name":"Armed Forces Middle East","code":"AM"},{"id":11,"name":"Armed Forces Pacific","code":"AP"},{"id":12,"name":"California","code":"CA"},{"id":13,"name":"Colorado","code":"CO"},{"id":14,"name":"Connecticut","code":"CT"},{"id":15,"name":"Delaware","code":"DE"},{"id":16,"name":"District of Columbia","code":"DC"},{"id":17,"name":"Federated States Of Micronesia","code":"FM"},{"id":18,"name":"Florida","code":"FL"},{"id":19,"name":"Georgia","code":"GA"},{"id":20,"name":"Guam","code":"GU"},{"id":21,"name":"Hawaii","code":"HI"},{"id":22,"name":"Idaho","code":"ID"},{"id":23,"name":"Illinois","code":"IL"},{"id":24,"name":"Indiana","code":"IN"},{"id":25,"name":"Iowa","code":"IA"},{"id":26,"name":"Kansas","code":"KS"},{"id":27,"name":"Kentucky","code":"KY"},{"id":28,"name":"Louisiana","code":"LA"},{"id":29,"name":"Maine","code":"ME"},{"id":30,"name":"Marshall Islands","code":"MH"},{"id":31,"name":"Maryland","code":"MD"},{"id":32,"name":"Massachusetts","code":"MA"},{"id":33,"name":"Michigan","code":"MI"},{"id":34,"name":"Minnesota","code":"MN"},{"id":35,"name":"Mississippi","code":"MS"},{"id":36,"name":"Missouri","code":"MO"},{"id":37,"name":"Montana","code":"MT"},{"id":38,"name":"Nebraska","code":"NE"},{"id":39,"name":"Nevada","code":"NV"},{"id":40,"name":"New Hampshire","code":"NH"},{"id":41,"name":"New Jersey","code":"NJ"},{"id":42,"name":"New Mexico","code":"NM"},{"id":43,"name":"New York","code":"NY"},{"id":44,"name":"North Carolina","code":"NC"},{"id":45,"name":"North Dakota","code":"ND"},{"id":46,"name":"Northern Mariana Islands","code":"MP"},{"id":47,"name":"Ohio","code":"OH"},{"id":48,"name":"Oklahoma","code":"OK"},{"id":49,"name":"Oregon","code":"OR"},{"id":50,"name":"Palau","code":"PW"},{"id":51,"name":"Pennsylvania","code":"PA"},{"id":52,"name":"Puerto Rico","code":"PR"},{"id":53,"name":"Rhode Island","code":"RI"},{"id":54,"name":"South Carolina","code":"SC"},{"id":55,"name":"South Dakota","code":"SD"},{"id":56,"name":"Tennessee","code":"TN"},{"id":57,"name":"Texas","code":"TX"},{"id":58,"name":"Utah","code":"UT"},{"id":59,"name":"Vermont","code":"VT"},{"id":61,"name":"Virginia","code":"VA"},{"id":60,"name":"Virgin Islands","code":"VI"},{"id":62,"name":"Washington","code":"WA"},{"id":63,"name":"West Virginia","code":"WV"},{"id":64,"name":"Wisconsin","code":"WI"},{"id":65,"name":"Wyoming","code":"WY"}]
         for zone in zones:
-            if self.profile['shipping_state'] == zone['code']:
+            if state == zone['code']:
                 return zone['id']
     def get_shipping_state(self, z):
         zones = [{"id":1,"name":"Alabama","code":"AL"},{"id":2,"name":"Alaska","code":"AK"},{"id":3,"name":"American Samoa","code":"AS"},{"id":4,"name":"Arizona","code":"AZ"},{"id":5,"name":"Arkansas","code":"AR"},{"id":6,"name":"Armed Forces Africa","code":"AF"},{"id":7,"name":"Armed Forces Americas","code":"AA"},{"id":8,"name":"Armed Forces Canada","code":"AC"},{"id":9,"name":"Armed Forces Europe","code":"AE"},{"id":10,"name":"Armed Forces Middle East","code":"AM"},{"id":11,"name":"Armed Forces Pacific","code":"AP"},{"id":12,"name":"California","code":"CA"},{"id":13,"name":"Colorado","code":"CO"},{"id":14,"name":"Connecticut","code":"CT"},{"id":15,"name":"Delaware","code":"DE"},{"id":16,"name":"District of Columbia","code":"DC"},{"id":17,"name":"Federated States Of Micronesia","code":"FM"},{"id":18,"name":"Florida","code":"FL"},{"id":19,"name":"Georgia","code":"GA"},{"id":20,"name":"Guam","code":"GU"},{"id":21,"name":"Hawaii","code":"HI"},{"id":22,"name":"Idaho","code":"ID"},{"id":23,"name":"Illinois","code":"IL"},{"id":24,"name":"Indiana","code":"IN"},{"id":25,"name":"Iowa","code":"IA"},{"id":26,"name":"Kansas","code":"KS"},{"id":27,"name":"Kentucky","code":"KY"},{"id":28,"name":"Louisiana","code":"LA"},{"id":29,"name":"Maine","code":"ME"},{"id":30,"name":"Marshall Islands","code":"MH"},{"id":31,"name":"Maryland","code":"MD"},{"id":32,"name":"Massachusetts","code":"MA"},{"id":33,"name":"Michigan","code":"MI"},{"id":34,"name":"Minnesota","code":"MN"},{"id":35,"name":"Mississippi","code":"MS"},{"id":36,"name":"Missouri","code":"MO"},{"id":37,"name":"Montana","code":"MT"},{"id":38,"name":"Nebraska","code":"NE"},{"id":39,"name":"Nevada","code":"NV"},{"id":40,"name":"New Hampshire","code":"NH"},{"id":41,"name":"New Jersey","code":"NJ"},{"id":42,"name":"New Mexico","code":"NM"},{"id":43,"name":"New York","code":"NY"},{"id":44,"name":"North Carolina","code":"NC"},{"id":45,"name":"North Dakota","code":"ND"},{"id":46,"name":"Northern Mariana Islands","code":"MP"},{"id":47,"name":"Ohio","code":"OH"},{"id":48,"name":"Oklahoma","code":"OK"},{"id":49,"name":"Oregon","code":"OR"},{"id":50,"name":"Palau","code":"PW"},{"id":51,"name":"Pennsylvania","code":"PA"},{"id":52,"name":"Puerto Rico","code":"PR"},{"id":53,"name":"Rhode Island","code":"RI"},{"id":54,"name":"South Carolina","code":"SC"},{"id":55,"name":"South Dakota","code":"SD"},{"id":56,"name":"Tennessee","code":"TN"},{"id":57,"name":"Texas","code":"TX"},{"id":58,"name":"Utah","code":"UT"},{"id":59,"name":"Vermont","code":"VT"},{"id":61,"name":"Virginia","code":"VA"},{"id":60,"name":"Virgin Islands","code":"VI"},{"id":62,"name":"Washington","code":"WA"},{"id":63,"name":"West Virginia","code":"WV"},{"id":64,"name":"Wisconsin","code":"WI"},{"id":65,"name":"Wyoming","code":"WY"}]

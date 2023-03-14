@@ -132,5 +132,5 @@ class ProxiesPage(QtWidgets.QWidget):
         self.loadlist_box.setCurrentIndex(0)
         self.listname_edit.setText("")
         self.proxies_edit.setText("")
-        QtWidgets.QMessageBox.information(self, "Bird Bot", "Deleted Proxy List")
+        QtWidgets.QMessageBox.information(self, "Pi Bot", "Deleted Proxy List")
 
