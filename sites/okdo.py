@@ -15,7 +15,8 @@ from selenium.webdriver.support.wait import WebDriverWait
 
 import utils
 from utils import send_notif, return_data
-from webhook import good_spark_web, failed_spark_web, cart_web
+from webhook import new_web
+
 
 def check_stock(json):
     availability = json["@graph"][0]["offers"][0]['availability']
@@ -109,7 +110,8 @@ class Okdo:
                         else:
                             self.status_signal.emit({"msg": "Added to cart", "status": "carted"})
                             if self.settings['webhookcart']:
-                                cart_web(str(self.info),self.image,f'OKDO ({str(self.site_prefix).upper()[1:]})', self.title, self.profile["profile_name"])
+                                new_web('carted',f'OKDO ({str(self.site_prefix).upper()[1:]})', self.image, self.title, self.profile["profile_name"])
+                                self.start_time = time.time()
                         return
                     else:
                         self.status_signal.emit({"msg": "Waiting for restock", "status": "monitoring"})
@@ -159,7 +161,6 @@ class Okdo:
             # Fills name
             first_name = WebDriverWait(driver,10).until(EC.element_to_be_clickable((By.CSS_SELECTOR,'#billing_first_name')))
             first_name.send_keys(profile["shipping_fname"])
-            #driver.find_element(By.CSS_SELECTOR,'#billing_first_name').send_keys(profile["shipping_fname"])
             driver.find_element(By.CSS_SELECTOR, '#billing_last_name').send_keys(profile["shipping_lname"])
             # Selects country. I had to loop through the countries because some countries contains extra characters
             # ie United States (US) so I just checked to see if the shipping country name was in the option
@@ -196,6 +197,7 @@ class Okdo:
             self.status_signal.emit({"msg": "Filling card info", "status": "normal"})
             # Waits for Credit Card radio button to load (incase there is site lag) and clicks it
             cc_button = WebDriverWait(driver, 20).until(EC.element_to_be_clickable((By.CSS_SELECTOR, "#payment > fieldset > ul > li:nth-child(2) > div.fancy-radio.wc_payment_method.payment-methods__radio.payment_method_stripe > label")))
+            time.sleep(0.5)
             cc_button.click()
             # Switches to CC Frame
             frame = driver.find_element(By.XPATH,'/html/body/div[1]/div[4]/div[2]/form[2]/main/div[1]/div/div[2]/div/fieldset/ul/li[2]/div[3]/div/fieldset[1]/div[1]/div/iframe')
@@ -209,13 +211,13 @@ class Okdo:
             # Sleeps half a second to help CC info properly input
             time.sleep(0.5)
             # Clicks proceed button
-            driver.find_element(By.CSS_SELECTOR,'#maincontent > div.l-grid > aside > div > div.c-order-summary.c-order-summary--readonly > button.c-button.c-button--shop.c-button--fullwidth.c-order-summary__submit.c-button--icon-right > span').click()
+            driver.find_element(By.CSS_SELECTOR,'#maincontent > div.l-grid > aside > div > div.c-order-summary.c-order-summary--minimal.f-checkout-vat-switch > button.c-button.c-button--shop.c-button--fullwidth.c-order-summary__submit.c-button--icon-right').click()
             # Waits for accept button to load and clicks
             accept = WebDriverWait(driver,5).until(EC.presence_of_element_located((By.CSS_SELECTOR,'#terms-of-sale-accept > div > div > label')))
             accept.click()
             self.status_signal.emit({"msg": "Submitting Order", "status": "normal"})
             # Clicks submit order
-            driver.find_element(By.CSS_SELECTOR,'#maincontent > div.l-grid > aside > div > div.c-order-summary.c-order-summary--readonly > button.c-button.c-button--shop.c-button--fullwidth.c-order-summary__submit.c-button--icon-right > span').click()
+            driver.find_element(By.CSS_SELECTOR,'#maincontent > div.l-grid > aside > div > div.c-order-summary.c-order-summary--minimal.f-checkout-vat-switch > button.c-button.c-button--shop.c-button--fullwidth.c-order-summary__submit.c-button--icon-right').click()
 
             processing = False
 
@@ -230,16 +232,21 @@ class Okdo:
                     time.sleep(1)
                 elif 'order-payment' in driver.current_url:
                     self.status_signal.emit({"msg": "Order Failed", "status": "error"})
+                    end_time = time.time() - self.start_time
                     if self.settings['webhookfailed']:
-                        failed_spark_web(self.info,self.image,f'OKDO ({str(self.site_prefix).upper()[1:]})',self.title,self.profile['profile_name'])
+                        new_web('failed', f'OKDO ({str(self.site_prefix).upper()[1:]})', self.image, self.title,
+                                self.profile["profile_name"], checkout_time=end_time)
+
                     if self.settings['notiffailed']:
                         send_notif(self.title,'fail')
                     break
                 elif 'order-received' in driver.current_url:
                     self.status_signal.emit({"msg": "Order Placed", "status": "success"})
+                    end_time = time.time() - self.start_time
                     if self.settings['webhooksuccess']:
-                        good_spark_web(str(driver.current_url), self.image, f'OKDO ({str(self.site_prefix).upper()[1:]})', self.title,
-                                         self.profile['profile_name'])
+                        new_web('success', f'OKDO ({str(self.site_prefix).upper()[1:]})', self.image, self.title,
+                                self.profile["profile_name"], checkout_time=end_time)
+
                     if self.settings['notifsuccess']:
                         send_notif(self.title,'success')
                     break
