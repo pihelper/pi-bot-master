@@ -1,25 +1,27 @@
+import json
 import random
 import time
-from os.path import exists
 
 import requests
+import pyotp
 from bs4 import BeautifulSoup
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
 
-from utils import return_data, send_notif, format_proxy, load_session, save_session
-from webhook import failed_spark_web, good_spark_web, cart_web
-
-account_items = ['4292', '4295', '4296', '4564', '5291']
+from utils import return_data, send_notif, format_proxy
+from webhook import new_web
 
 class Adafruit:
 
     def __init__(self, task_id, status_signal, product_signal, product, size, profile, proxy, monitor_delay, error_delay,captcha_type, qty):
-        self.task_id, self.status_signal, self.product_signal, self.product,self.size, self.profile, self.monitor_delay, self.error_delay, self.captcha_type, self.qty = task_id, status_signal, product_signal, product,size, profile, monitor_delay, error_delay,captcha_type, qty
+        self.task_id, self.status_signal, self.product_signal, self.product,self.size, self.profile, self.monitor_delay, self.error_delay, self.captcha_type, self.qty= task_id, status_signal, product_signal, product,size, profile, monitor_delay, error_delay,captcha_type, qty
         self.session = requests.Session()
         self.proxy_list = proxy
         if self.proxy_list != False:
             self.update_random_proxy()
+
+        self.user = self.profile.split('|')[1]
+        self.pw = self.profile.split('|')[2]
+        otp_secret = str(self.profile.split('|')[3]).strip()
+        self.otp = pyotp.TOTP(otp_secret)
         self.settings = return_data("./data/settings.json")
 
         self.pid = ''
@@ -32,27 +34,17 @@ class Adafruit:
         self.current = ''
         self.price = ''
         self.current_step = ''
+        self.zenid = ''
+        self.acp_id = ''
+        self.address = ''
 
-        self.need_chrome = False
         self.product = self.product.split('[')[0].strip()
         self.has_account = False
         self.shipping_method = ''
-        if self.acount_needed():
-            if not exists('./chromedriver.exe'):
-                self.status_signal.emit({"msg": "ChromeDriver.exe not found!", "status": "error"})
-                self.need_chrome = True
-            else:
-                self.get_session()
-        if not self.need_chrome:
-            self.monitor()
-            self.cart()
-            self.checkout()
-
-    def acount_needed(self):
-        for x in account_items:
-            if x in self.product:
-                return True
-        return False
+        self.request_login()
+        self.monitor()
+        self.cart()
+        self.checkout()
 
     def get_headers(self):
         headers = {'authority': 'www.adafruit.com',
@@ -75,57 +67,45 @@ class Adafruit:
         spli = sub.split("'")[2]
         return spli
 
-    def get_session(self):
-        self.status_signal.emit({"msg": "Checking for session", "status": "normal"})
-        session = load_session(self.profile["shipping_email"], 'https://www.adafruit.com/')
-        if session == False:
-            self.login()
-        else:
-            for cookies in session[0]:
-                self.session.cookies.set(cookies, session[0][cookies], domain='.adafruit.com', path='/')
-            self.status_signal.emit({"msg": "Validating session", "status": "normal"})
-            account_get = self.session.get('https://accounts.adafruit.com/')
-            if 'sign_in' in account_get.url:
-                self.status_signal.emit({"msg": "Session no longer valid", "status": "normal"})
-                self.login()
+    def request_login(self):
+        login_url = 'https://accounts.adafruit.com/users/sign_in'
+        auth = ''
+        while auth == '':
+            self.status_signal.emit({"msg": "Getting Auth", "status": "normal"})
+            auth_get = self.session.get(login_url, headers=self.get_headers())
+            if auth_get.status_code == 200:
+                soup = BeautifulSoup(auth_get.content, 'html.parser')
+                auth = soup.find('meta', {'name': 'csrf-token'}).get('content')
             else:
-                self.status_signal.emit({"msg": "Valid session found!", "status": "normal"})
-                self.has_account = True
-    def login(self):
-        self.status_signal.emit({"msg": "Awaiting Login", "status": "normal"})
-        options = Options()
-        options.headless = False
-        options.add_argument("window-size=800,600")
-        options.add_argument('enable-automation')
-        options.add_argument('--no-sandbox')
-        options.add_argument('--disable-dev-shm-usage')
-        options.add_argument('--disable-browser-side-navigation')
-        options.add_argument('--disable-gpu')
-        options.add_argument('log-level=3')
-        options.add_experimental_option("excludeSwitches", ["enable-automation"])
-        options.add_experimental_option('useAutomationExtension', False)
-        options.add_argument('disable-infobars')
-        driver = webdriver.Chrome(options=options)
-        driver.get('https://accounts.adafruit.com/users/sign_in')
+                self.status_signal.emit({"msg": "Error getting auth, retrying", "status": "error"})
+                time.sleep(float(self.error_delay))
         while True:
-            while 'sign_in' in driver.current_url:
-                time.sleep(1)
-            self.status_signal.emit({"msg": "Checking login session", "status": "normal"})
-
-            for cookie in driver.get_cookies():
-                self.session.cookies.set(cookie['name'], cookie['value'], domain=cookie['domain'], path=cookie['path'])
-                print(cookie['name'], cookie['value'], cookie['domain'], cookie['path'])
-            account_check = self.session.get('https://accounts.adafruit.com/')
-            if 'sign_in' not in account_check.url:
-                self.status_signal.emit({"msg": "Session valid!", "status": "normal"})
-                driver.close()
-                save_session(self.profile['shipping_email'], 'https://www.adafruit.com/', self.session)
-                self.has_account = True
-                return
+            self.status_signal.emit({"msg": "Logging In (Email/Pass)", "status": "normal"})
+            email_login_form = {
+                'authenticity_token': auth,
+                'user[login]': self.user,
+                'user[password]': self.pw,
+                'commit': 'SIGN IN'
+            }
+            email_post = self.session.post(login_url, data=email_login_form, headers=self.get_headers())
+            if 'TWO FACTOR AUTH' in email_post.text:
+                self.status_signal.emit({"msg": "Logging In (2FA)", "status": "normal"})
+                otp_form = {
+                    'authenticity_token': auth,
+                    'user[otp_attempt]': self.otp.now(),
+                    'commit': 'VERIFY'
+                }
+                opt_post = self.session.post(login_url, data=otp_form, headers=self.get_headers())
+                account_check = self.session.get('https://accounts.adafruit.com/')
+                if 'sign_in' not in account_check.url:
+                    self.status_signal.emit({"msg": "Successfully logged in", "status": "normal"})
+                    break
+                else:
+                    self.status_signal.emit({"msg": "Error OTP, retrying in 30s", "status": "error"})
+                    time.sleep(30)
             else:
-                self.status_signal.emit({"msg": "Session invalid, please retry", "status": "normal"})
-                driver.delete_all_cookies()
-                driver.get('https://accounts.adafruit.com/users/sign_in')
+                self.status_signal.emit({"msg": "Error logging in, retrying", "status": "error"})
+                time.sleep(float(self.error_delay))
 
     def monitor(self):
         while True:
@@ -172,9 +152,9 @@ class Adafruit:
             soup = BeautifulSoup(cart_add.content, 'html.parser')
             if 'Added to Adafruit' in soup.find('title').string:
                 self.status_signal.emit({"msg": "Carted", "status": "carted"})
+                self.start_time = time.time()
                 if self.settings['webhookcart']:
-                    cart_web(self.product, self.image, 'Adafruit (Guest)', self.item,
-                             self.profile['profile_name'])
+                    new_web('carted', 'Adafruit', self.image, self.item, self.user)
 
                 self.status_signal.emit({"msg": "Navigating to cart", "status": "normal"})
                 cart_get = self.session.get('https://www.adafruit.com/shopping_cart', headers=self.get_headers())
@@ -204,12 +184,17 @@ class Adafruit:
                 self.status_signal.emit({"msg": "Redirecting to checkout", "status": "normal"})
                 checkout_get = self.session.get('https://www.adafruit.com/checkout', headers=self.get_headers())
                 if 'step=' in checkout_get.url:
+                    #print(checkout_get.url)
                     soup = BeautifulSoup(checkout_get.content, 'html.parser')
                     self.current_step = checkout_get.url.split('=')[1]
                     self.csrf = soup.find('input', {'name': 'csrf_token'}).get('value')
+
+                    if 'step=2' in checkout_get.url:
+                        saved_address = soup.find_all(['select'])[0].find_all(['option'])[0]
+                        self.address = json.loads(saved_address.get('data-address'))
+                        #print(self.address)
                 else:
                     self.status_signal.emit({"msg": "Error redirecting", "status": "error"})
-                    print(checkout_get.text)
 
     def checkout(self):
         profile = self.profile
@@ -222,7 +207,6 @@ class Adafruit:
                            'action': 'save_one'}
 
             step_1_post = self.session.post(checkout_url, data=step_1_form, headers=self.get_headers())
-
             if 'permanently disabled certain email addresses' in step_1_post.text:
                 self.status_signal.emit({"msg": "Email Banned", "status": "error"})
                 return
@@ -230,18 +214,24 @@ class Adafruit:
                 self.current_step = '2'
         if self.current_step == '2':
             self.status_signal.emit({"msg": "Submitting Address", "status": "normal"})
+
+            blacklist_keys = ['firstname', 'lastname', 'country', 'label', 'country_id', 'state', 'zone_id']
+
             step_2_form = {'csrf_token': self.csrf,
-                           'delivery_use_anyways': 1,
-                           'delivery_name': f"{profile['shipping_fname']} {profile['shipping_lname']}",
-                           'delivery_company': '',
-                           'delivery_address1': profile['shipping_a1'],
-                           'delivery_address2': profile['shipping_a2'],
-                           'delivery_city': profile['shipping_city'],
-                           'delivery_state': self.get_shipping_zone(),
-                           'delivery_postcode': profile['shipping_zipcode'],
-                           'delivery_country': 223,
-                           'delivery_phone': profile['shipping_phone'],
-                           'action': 'save_two'}
+                           'action': 'save_two',
+                           'delivery_use_anyways': 0,
+                           'billing_use_anyways': 0}
+
+            for value in self.address:
+                if value not in blacklist_keys:
+                    step_2_form[f'delivery_{value}'] = self.address[value]
+                    step_2_form[f'billing_{value}'] = self.address[value]
+
+            step_2_form['delivery_country'] = self.address['country_id']
+            step_2_form['billing_country'] = self.address['country_id']
+
+            step_2_form['delivery_state'] = self.address['zone_id']
+            step_2_form['billing_state'] = self.address['zone_id']
 
             step_2_post = self.session.post(checkout_url, data=step_2_form, headers=self.get_headers())
             if 'permanently disabled certain shipping' in step_2_post.text:
@@ -263,60 +253,53 @@ class Adafruit:
             self.status_signal.emit({"msg": "Submitting payment", "status": "normal"})
             step_4_form = {'csrf_token' : self.csrf,
                            'action': 'save_four',
-                           'payment': 'authorizenet_aim',
-                           'authorizenet_aim_cc_owner': f"{profile['shipping_fname']} {profile['shipping_lname']}",
-                           'authorizenet_aim_cc_number': profile['card_number'],
-                           'authorizenet_aim_cc_expires_month': profile['card_month'],
-                           'authorizenet_aim_cc_expires_year': profile['card_year'],
-                           'authorizenet_aim_cc_cvv': profile['card_cvv'],
+                           'payment': 'authorizenet_cim',
+                           'authorizenet_aim_cc_number': '',
+                           'authorizenet_aim_cc_expires_month': '0',
+                           'authorizenet_aim_cc_expires_year': '0',
+                           'authorizenet_aim_cc_cvv': '',
+                           'authorizenet_aim_cc_nickname': '',
                            'card-type': 'amex',
                            'po_payment_type': 'replacement'}
             try:
                 soup = BeautifulSoup(step_3_post.content, 'html.parser')
-                step_4_form["acp_id"] = soup.find('input', {'name': 'acp_id'}).get('value')
+                self.acp_id = soup.find('input', {'name': 'acp_id'}).get('value')
+                step_4_form["acp_id"] = self.acp_id
+                step_4_form['authorizenet_aim_cc_owner'] = soup.find_all('label', {'class': 'checkout-payment-method-label'})[0].text.split('-')[0].strip()
             except:
                 print("Couldn't find acp_id")
 
             step_4_post = self.session.post(checkout_url, data=step_4_form, headers=self.get_headers())
 
-
-
             if step_4_post.url == 'https://www.adafruit.com/checkout':
                 self.status_signal.emit({"msg": "Submitting order", "status": "alt"})
                 soup = BeautifulSoup(step_4_post.content, 'html.parser')
-                values = ['cc_owner', 'cc_expires', 'cc_type', 'cc_number', 'cc_cvv', 'zenid']
-                final_checkout_form = {'csrf_token': self.csrf, 'cc_nickname': ''}
-
-                for value in values:
-                    final_checkout_form[value] = soup.find('input', {'name': value}).get('value')
-
+                final_checkout_form = {'csrf_token': self.csrf, 'acp_id': self.acp_id}
+                try:
+                    final_checkout_form['zenid'] = soup.find('input', {'name': 'zenid'}).get('value')
+                except:
+                    print("Could not fetch ZenID")
                 final_post = self.session.post('https://www.adafruit.com/index.php?main_page=checkout_process', data=final_checkout_form, headers=self.get_headers())
-                print(final_post.text)
+                end_time = time.time() - self.start_time
                 if 'Your credit card could not be authorized' in final_post.text:
                     self.status_signal.emit({"msg": "Checkout Failed (Card Decline)", "status": "error"})
                     if self.settings['webhookfailed']:
-                        failed_spark_web(self.product, self.image,'Adafruit (Guest)', self.item, self.profile["profile_name"])
+                        new_web('failed', 'Adafruit', self.image, self.item, self.user, checkout_time=end_time)
                     if self.settings['notiffailed']:
                         send_notif(self.item, 'fail')
                 elif 'checkout_success' in final_post.url:
                     self.status_signal.emit({"msg": "Successful Checkout", "status": "success"})
                     if self.settings['webhooksuccess']:
-                        good_spark_web({str(self.product)}, self.image,'Adafruit (Guest)',self.item, self.profile["profile_name"])
+                        new_web('success', 'Adafruit', self.image, self.item, self.user, checkout_time=end_time)
                     if self.settings['notifsuccess']:
                         send_notif(self.item, 'success')
                 else:
                     self.status_signal.emit({"msg": "Checkout Failed (Other)", "status": "error"})
                     if self.settings['webhookfailed']:
-                        failed_spark_web(self.product, self.image,'Adafruit (Guest)', self.item, self.profile["profile_name"])
+                        new_web('failed', 'Adafruit', self.image, self.item, self.user, checkout_time=end_time)
                     if self.settings['notiffailed']:
                         send_notif(self.item, 'fail')
 
-
-    def get_shipping_zone(self):
-        zones = [{"id":1,"name":"Alabama","code":"AL"},{"id":2,"name":"Alaska","code":"AK"},{"id":3,"name":"American Samoa","code":"AS"},{"id":4,"name":"Arizona","code":"AZ"},{"id":5,"name":"Arkansas","code":"AR"},{"id":7,"name":"Armed Forces Americas","code":"AA"},{"id":9,"name":"Armed Forces Europe","code":"AE"},{"id":11,"name":"Armed Forces Pacific","code":"AP"},{"id":12,"name":"California","code":"CA"},{"id":13,"name":"Colorado","code":"CO"},{"id":14,"name":"Connecticut","code":"CT"},{"id":15,"name":"Delaware","code":"DE"},{"id":16,"name":"District of Columbia","code":"DC"},{"id":17,"name":"Federated States Of Micronesia","code":"FM"},{"id":18,"name":"Florida","code":"FL"},{"id":19,"name":"Georgia","code":"GA"},{"id":20,"name":"Guam","code":"GU"},{"id":21,"name":"Hawaii","code":"HI"},{"id":22,"name":"Idaho","code":"ID"},{"id":23,"name":"Illinois","code":"IL"},{"id":24,"name":"Indiana","code":"IN"},{"id":25,"name":"Iowa","code":"IA"},{"id":26,"name":"Kansas","code":"KS"},{"id":27,"name":"Kentucky","code":"KY"},{"id":28,"name":"Louisiana","code":"LA"},{"id":29,"name":"Maine","code":"ME"},{"id":30,"name":"Marshall Islands","code":"MH"},{"id":31,"name":"Maryland","code":"MD"},{"id":32,"name":"Massachusetts","code":"MA"},{"id":33,"name":"Michigan","code":"MI"},{"id":34,"name":"Minnesota","code":"MN"},{"id":35,"name":"Mississippi","code":"MS"},{"id":36,"name":"Missouri","code":"MO"},{"id":37,"name":"Montana","code":"MT"},{"id":38,"name":"Nebraska","code":"NE"},{"id":39,"name":"Nevada","code":"NV"},{"id":40,"name":"New Hampshire","code":"NH"},{"id":41,"name":"New Jersey","code":"NJ"},{"id":42,"name":"New Mexico","code":"NM"},{"id":43,"name":"New York","code":"NY"},{"id":44,"name":"North Carolina","code":"NC"},{"id":45,"name":"North Dakota","code":"ND"},{"id":46,"name":"Northern Mariana Islands","code":"MP"},{"id":47,"name":"Ohio","code":"OH"},{"id":48,"name":"Oklahoma","code":"OK"},{"id":49,"name":"Oregon","code":"OR"},{"id":50,"name":"Palau","code":"PW"},{"id":51,"name":"Pennsylvania","code":"PA"},{"id":52,"name":"Puerto Rico","code":"PR"},{"id":53,"name":"Rhode Island","code":"RI"},{"id":54,"name":"South Carolina","code":"SC"},{"id":55,"name":"South Dakota","code":"SD"},{"id":56,"name":"Tennessee","code":"TN"},{"id":57,"name":"Texas","code":"TX"},{"id":58,"name":"Utah","code":"UT"},{"id":59,"name":"Vermont","code":"VT"},{"id":61,"name":"Virginia","code":"VA"},{"id":60,"name":"Virgin Islands","code":"VI"},{"id":62,"name":"Washington","code":"WA"},{"id":63,"name":"West Virginia","code":"WV"},{"id":64,"name":"Wisconsin","code":"WI"},{"id":65,"name":"Wyoming","code":"WY"}]
-        for zone in zones:
-            if self.profile['shipping_state'] == zone['code']:
-                return zone['id']
 
     def request_cookies(self):
         cook_string = ''
