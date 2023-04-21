@@ -267,7 +267,12 @@ class Adafruit:
                 step_4_form["acp_id"] = self.acp_id
                 step_4_form['authorizenet_aim_cc_owner'] = soup.find_all('label', {'class': 'checkout-payment-method-label'})[0].text.split('-')[0].strip()
             except:
-                print("Couldn't find acp_id")
+                self.status_signal.emit({"msg": "No saved card on account", "status": "error"})
+                if self.settings['webhookfailed']:
+                    new_web('failed', 'Adafruit', self.image, self.item, self.user)
+                if self.settings['notiffailed']:
+                    send_notif(self.item, 'fail')
+                return
 
             step_4_post = self.session.post(checkout_url, data=step_4_form, headers=self.get_headers())
 
