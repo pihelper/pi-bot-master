@@ -89,10 +89,15 @@ class Adafruit:
             }
             email_post = self.session.post(login_url, data=email_login_form, headers=self.get_headers())
             if 'TWO FACTOR AUTH' in email_post.text:
+                # Gets current unix time
+                self.status_signal.emit({"msg": "Getting current time", "status": "normal"})
+                time_json = self.session.get('http://worldtimeapi.org/api/timezone/GMT').json()
+                otp_time = int(time_json['unixtime'])
+
                 self.status_signal.emit({"msg": "Logging In (2FA)", "status": "normal"})
                 otp_form = {
                     'authenticity_token': auth,
-                    'user[otp_attempt]': self.otp.now(),
+                    'user[otp_attempt]': self.otp.at(for_time=otp_time),
                     'commit': 'VERIFY'
                 }
                 opt_post = self.session.post(login_url, data=otp_form, headers=self.get_headers())

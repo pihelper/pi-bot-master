@@ -6,7 +6,7 @@ import requests
 
 import settings
 
-version = '1.21'
+version = '1.22'
 
 def new_web(status, site_name, image, item_name, profile, price = 'N/A', checkout_time='N/A'):
     title = 'Item Carted'
