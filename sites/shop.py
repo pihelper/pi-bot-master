@@ -682,7 +682,7 @@ class Shop:
         self.status_signal.emit({"msg": "Submitting address", "status": "normal"})
         graphql = self.new_shipping(self.initial_graphql)
         self.queue_token = graphql[list(graphql.keys())[-2]]['queueToken']
-        self.session_token = graphql[list(graphql.keys())[-2]]['sessionInput']['sessionToken']
+        self.session_token = self.get_session_token()
         shipping_post = self.session.post(f"{self.main_site}checkouts/unstable/graphql", data=json.dumps(graphql),
                                           headers=self.new_headers())
         self.queue_token = shipping_post.json()['data']['session']['negotiate']['result']['queueToken']
@@ -854,7 +854,7 @@ class Shop:
         main_json = graphql_json[list(graphql_json.keys())[-1]]
         currency_json = graphql_json[currency_key]
 
-        self.session_token = data_json['sessionToken']
+        self.session_token = self.get_session_token()
         self.checkpoint_data = data_json['checkpointData']
 
         tax_key = 'totalTaxAmount' if main_json['session']['negotiate']['result']['sellerProposal']['tax'][
@@ -1402,3 +1402,9 @@ class Shop:
         graphql = soup.find('meta', {'name': 'serialized-graphql'}).get('content')
         return json.loads(graphql)
 
+    def get_checkout_token(self):
+        for cookie in self.session.cookies:
+            if 'checkout_session_token' in cookie.name:
+                token = urllib.unquote(cookie.value)
+                return json.loads(token)['token']
+        return None
